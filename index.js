@@ -2,6 +2,7 @@ const path = require('path')
 const http = require('http')
 const Dat = require('dat-node')
 const hyperdriveHttp = require('hyperdrive-http')
+var ram = require('random-access-memory')
 
 // constants
 // =
@@ -63,13 +64,13 @@ function getDat (key, cb) {
   dats[key] = [cb]
 
   // create the dat
-  Dat('./cache', {key, temp: false, sparse: true}, function (err, dat) {
+  Dat('./cache', {key, temp: true}, function (err, dat) {
     if (dat) {
       // Join Dat's p2p network to download the site
       dat.joinNetwork()
 
       // create http server
-      dat.onrequest = hyperdriveHttp(dat.archive, {live: false, footer})
+      dat.onrequest = hyperdriveHttp(dat.archive, {live: false, exposeHeaders: true, footer})
 
       // download metadata
       dat.archive.metadata.update(done)
