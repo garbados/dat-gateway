@@ -4,7 +4,7 @@
   "description": "A Dat to HTTP gateway.",
   "main": "index.js",
   "scripts": {
-    "start": "node index",
+    "start": "node bin.js",
     "test": "standard 'index.js' 'bin.js' 'test.js' && node test.js"
   },
   "repository": {
@@ -22,7 +22,8 @@
   "homepage": "https://github.com/pfrazee/dat-gateway",
   "dependencies": {
     "dat-node": "^3.3.1",
-    "hyperdrive-http": "^4.2.0"
+    "hyperdrive-http": "^4.2.0",
+    "underscore": "^1.8.3"
   },
   "devDependencies": {
     "mocha": "^3.5.3",

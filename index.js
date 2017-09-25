@@ -1,18 +1,43 @@
+const _ = require('underscore')
 const http = require('http')
 const Dat = require('dat-node')
 const hyperdriveHttp = require('hyperdrive-http')
 const pkg = require('./package.json')
 
-const settings = {
+// default settings
+// =
+
+const DEFAULT_SETTINGS = {
   port: process.env.DAT_GATEWAY_PORT || 3000,
   homepage: pkg.homepage
 }
+
+// main class
+// =
+
+class DatGateway {
+  constructor (settings) {
+    this.settings = _.extend({}, DEFAULT_SETTINGS, settings)
+  }
+
+  start () {
+    // create server app
+    var server = http.createServer(getAsset)
+    server.listen(this.settings.port)
+    console.log('Listening on port ' + this.settings.port)
+  }
+}
+
+/*
+BELOWE HERE BE YE OLDE CODE
+WRITTEN LONGWISE AGO BY UNDERCOVER SKELETONS
+SERVING IN THE SKELETON WAR
+*/
 
 // constants
 // =
 
 const DAT_REGEX = /^([0-9a-f]{64})/i
-const footer = 'Served via ' + settings.homepage
 
 // globals
 // =
@@ -67,7 +92,7 @@ function getDat (key, cb) {
       dat.joinNetwork()
 
       // create http server
-      dat.onrequest = hyperdriveHttp(dat.archive, {live: false, exposeHeaders: true, footer})
+      dat.onrequest = hyperdriveHttp(dat.archive, {live: false, exposeHeaders: true})
 
       // download metadata
       dat.archive.metadata.update(done)
@@ -84,9 +109,4 @@ function getDat (key, cb) {
   })
 }
 
-module.exports = function () {
-  // create server app
-  var server = http.createServer(getAsset)
-  server.listen(settings.port)
-  console.log('Listening on port ' + settings.port)
-}
+module.exports = DatGateway
