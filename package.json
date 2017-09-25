@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "node index",
-    "test": "standard 'index.js' && node test.js"
+    "test": "standard 'index.js' 'bin.js' 'test.js' && node test.js"
   },
   "repository": {
     "type": "git",

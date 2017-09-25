@@ -1,28 +1,26 @@
-const path = require('path')
 const http = require('http')
 const Dat = require('dat-node')
 const hyperdriveHttp = require('hyperdrive-http')
-var ram = require('random-access-memory')
+const pkg = require('./package.json')
+
+const settings = {
+  port: process.env.DAT_GATEWAY_PORT || 3000,
+  homepage: pkg.homepage
+}
 
 // constants
 // =
 
 const DAT_REGEX = /^([0-9a-f]{64})/i
-const footer = 'Served via https://github.com/pfrazee/dat-gateway'
+const footer = 'Served via ' + settings.homepage
 
 // globals
 // =
 
-var app
 var dats = {}
 
 // main
 // =
-
-// create server app
-var server = http.createServer(getAsset)
-server.listen(80)
-console.log('Listening on port 80')
 
 function getAsset (req, res) {
   // validate params
@@ -55,8 +53,7 @@ function getDat (key, cb) {
     // list of callbacks
     dats[key].push(cb)
     return
-  }
-  else if (dats[key]) {
+  } else if (dats[key]) {
     return cb(null, dats[key])
   }
 
@@ -85,4 +82,11 @@ function getDat (key, cb) {
       cbs.forEach(cb => cb(err, dat))
     }
   })
+}
+
+module.exports = function () {
+  // create server app
+  var server = http.createServer(getAsset)
+  server.listen(settings.port)
+  console.log('Listening on port ' + settings.port)
 }
