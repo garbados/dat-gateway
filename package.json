@@ -1,11 +1,31 @@
 {
   "name": "dat-gateway",
+  "version": "0.1.1",
+  "description": "A Dat to HTTP gateway.",
+  "main": "index.js",
   "scripts": {
-    "start": "node index"
+    "start": "node index",
+    "test": "standard 'index.js' && node test.js"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pfrazee/dat-gateway.git"
+  },
+  "keywords": [
+    "couchdb"
+  ],
+  "author": "Paul Frazee <pfrazee@gmail.com>",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/pfrazee/dat-gateway/issues"
+  },
+  "homepage": "https://github.com/pfrazee/dat-gateway",
   "dependencies": {
     "dat-node": "^3.3.1",
-    "hyperdrive-http": "^4.2.0",
-    "random-access-memory": "^2.4.0"
+    "hyperdrive-http": "^4.2.0"
+  },
+  "devDependencies": {
+    "standard": "^10.0.3",
+    "tap": "^10.7.2"
   }
 }
