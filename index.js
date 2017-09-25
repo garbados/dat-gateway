@@ -1,6 +1,6 @@
 const _ = require('underscore')
-const http = require('http')
 const Dat = require('dat-node')
+const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const pkg = require('./package.json')
 
@@ -8,8 +8,7 @@ const pkg = require('./package.json')
 // =
 
 const DEFAULT_SETTINGS = {
-  port: process.env.DAT_GATEWAY_PORT || 3000,
-  homepage: pkg.homepage
+  port: process.env.DAT_GATEWAY_PORT || 3000
 }
 
 // main class
@@ -25,6 +24,7 @@ class DatGateway {
     var server = http.createServer(getAsset)
     server.listen(this.settings.port)
     console.log('Listening on port ' + this.settings.port)
+    return server
   }
 }
 
