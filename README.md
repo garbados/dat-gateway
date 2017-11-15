@@ -1,5 +1,7 @@
 # Dat HTTP Gateway
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/garbados/dat-gateway.svg)](https://greenkeeper.io/)
+
 Setup:
 
 ```
