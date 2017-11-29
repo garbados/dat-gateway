@@ -1,11 +1,36 @@
 {
   "name": "dat-gateway",
+  "description": "A Dat-to-HTTP gateway and helper library.",
+  "version": "0.0.1",
+  "main": "lib/index.js",
+  "bin": "./bin/index.js",
   "scripts": {
-    "start": "node index"
+    "start": "./bin/index.js",
+    "test": "standard && dependency-check . && tap test/index.js"
   },
   "dependencies": {
+    "commander": "^2.12.2",
     "dat-node": "^3.3.1",
     "hyperdrive-http": "^4.2.0",
-    "random-access-memory": "^2.4.0"
-  }
+    "node-cache": "^4.1.1"
+  },
+  "devDependencies": {
+    "dependency-check": "^2.9.1",
+    "standard": "^10.0.3",
+    "tap": "^11.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/garbados/dat-gateway.git"
+  },
+  "keywords": [
+    "dat",
+    "http",
+    "https"
+  ],
+  "authors": [
+    "Paul Frazee <pfrazee@gmail.com>",
+    "Diana Thayer <garbados@gmail.com>"
+  ],
+  "license": "GPL-3.0"
 }
