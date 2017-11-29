@@ -31,7 +31,7 @@ TODO
 Once you've installed dat-gateway, you will find the `dat-gateway` command on your $PATH. You can run this command to start a gateway server that listens on port 3000. You can also configure it:
 
 - `-p, --port`: Specify which port to listen on. Defaults to 3000.
-- `-t, --ttl`: Specify how many seconds Dat archives will remain in the cache. Defaults to 120.
+- `-t, --ttl`: Specify how many seconds Dat archives will remain in the cache. Defaults to 120. (TODO)
 - `-d, --dir`: Specify a directory to use as a persistent cache. This will store Dat archives on disk rather than in memory. (TODO)
 
 You can visit Dat archives through the gateway using a route like this:
