@@ -18,6 +18,7 @@ class DatGateway {
 
   handler () {
     return (req, res) => {
+      // TODO redirect /:key to /:key/
       let urlParts = req.url.split('/')
       let address = urlParts[1]
       let path = urlParts.slice(2).join('/')
