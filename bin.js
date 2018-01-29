@@ -20,7 +20,7 @@ require('yargs')
         },
         dir: {
           alias: 'd',
-          description: 'Directory to use as a persistent cache.',
+          description: 'Directory to use as a cache.',
           coerce: function (value) {
             return value.replace('~', os.homedir())
           },

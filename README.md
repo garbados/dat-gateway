@@ -1,38 +1,23 @@
 # dat-gateway
 
-A configurable [Dat](https://datproject.org/)-to-HTTP gateway, so you can visit Dat archives from your browser.
+A configurable in-memory [Dat](https://datproject.org/)-to-HTTP gateway, so you can visit Dat archives from your browser.
 
 If you want a browser that can visit Dat archives, check out [Beaker](https://beakerbrowser.com/).
 
 ## Install
 
-You can use dat-gateway as a library or a CLI.
-
-With the library, you could add a gateway as a route to an existing application. With the CLI, you can run and configure a dedicated gateway.
-
-To install as a library:
-
-```
-npm i -S dat-gateway
-```
-
-To install the CLI:
+To get the `dat-gateway` command for running your own gateway, use [npm](https://www.npmjs.com/):
 
 ```
 npm i -g dat-gateway
 ```
 
-## Usage, Library
+## Usage
 
-TODO
-
-## Usage, CLI
-
-Once you've installed dat-gateway, you will find the `dat-gateway` command on your $PATH. You can run this command to start a gateway server that listens on port 3000. You can also configure it:
+You can run `dat-gateway` to start a gateway server that listens on port 3000. You can also configure it:
 
 - `-p, --port`: Specify which port to listen on. Defaults to 3000.
-- `-t, --ttl`: Specify how many seconds Dat archives will remain in the cache. Defaults to 120. (TODO)
-- `-d, --dir`: Specify a directory to use as a persistent cache. This will store Dat archives on disk rather than in memory. (TODO)
+- `-d, --dir`: Specify a directory to use as a cache. Defaults to `~/.dat-gateway`.
 
 You can visit Dat archives through the gateway using a route like this:
 
@@ -46,6 +31,16 @@ For example:
 http://localhost:3000/40a7f6b6147ae695bcbcff432f684c7bb5291ea339c28c1755896cdeb80bd2f9/assets/img/beaker-0.7.gif
 ```
 
+The gateway will even resolve URLs using [Dat-DNS](https://github.com/beakerbrowser/beaker/wiki/Authenticated-Dat-URLs-and-HTTPS-to-Dat-Discovery):
+
+```
+http://localhost:3000/garbados.hashbase.io/icons/favicon.ico
+```
+
+## Contributions
+
+All contributions are welcome: bug reports, feature requests, "why doesn't this work" questions, patches for fixes and features, etc. For all of the above, [file an issue](https://github.com/garbados/dat-gateway/issues) or [submit a pull request](https://github.com/garbados/dat-gateway/pulls).
+
 ## License
 
-[GPL-3.0](https://opensource.org/licenses/gpl-3.0.html)
+[Apache-2.0](https://www.apache.org/licenses/LICENSE-2.0)
