@@ -5,19 +5,24 @@ const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const resolveDat = require('dat-link-resolve')
 
+function log () {
+  let msg = arguments[0]
+  arguments[0] = '[dat-gateway] ' + msg
+  if (process.env.DEBUG || process.env.LOG) {
+    console.log.apply(console, arguments)
+  }
+}
+
 module.exports =
 class DatGateway {
   constructor ({ dir, dat }) {
     this.dir = dir
     this.datOptions = Object.assign({}, dat || { temp: true })
     this.dats = {}
+    log('Starting gateway at %s with options %j', this.dir, this.datOptions)
 
-    const handler = this.handler()
-    this.server = http.createServer(handler)
-  }
-
-  handler () {
-    return (req, res) => {
+    this.server = http.createServer((req, res) => {
+      log('%s %s', req.method, req.url)
       // TODO redirect /:key to /:key/
       let urlParts = req.url.split('/')
       let address = urlParts[1]
@@ -29,6 +34,7 @@ class DatGateway {
         req.url = `/${path}`
         dat.onrequest(req, res)
       }).catch((e) => {
+        log(e)
         if (e.message === 'DNS record not found') {
           res.writeHead(404)
           res.end('Not found')
@@ -37,7 +43,7 @@ class DatGateway {
           res.end(JSON.stringify(e))
         }
       })
-    }
+    })
   }
 
   listen (port) {
@@ -46,6 +52,24 @@ class DatGateway {
         if (err) return reject(err)
         else return resolve()
       })
+    })
+  }
+
+  close () {
+    return new Promise((resolve) => {
+      this.server.close(resolve)
+    }).then(() => {
+      const tasks = Object.keys(this.dats).map((key) => {
+        const dat = this.dats[key]
+        return new Promise((resolve, reject) => {
+          dat.close((err) => {
+            if (err) return reject(err)
+            else resolve()
+          })
+        })
+      })
+
+      return Promise.all(tasks)
     })
   }
 

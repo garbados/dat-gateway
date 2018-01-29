@@ -15,17 +15,12 @@ require('yargs')
       yargs.options({
         port: {
           alias: 'p',
-          description: 'port for the gateway to listen on.',
+          description: 'Port for the gateway to listen on.',
           default: 3000
-        },
-        ttl: {
-          alias: 't',
-          description: 'number of seconds that archives stay in the cache.',
-          default: 120
         },
         dir: {
           alias: 'd',
-          description: 'directory to use as a persistent cache. Disables in-memory storage.',
+          description: 'Directory to use as a persistent cache.',
           coerce: function (value) {
             return value.replace('~', os.homedir())
           },
@@ -35,12 +30,12 @@ require('yargs')
       })
     },
     handler: function (argv) {
-      const { port, ttl, dir } = argv
-      const gateway = new DatGateway({ ttl, dir })
+      const { port, dir } = argv
+      const gateway = new DatGateway({ dir })
       gateway
         .listen(port)
         .then(function () {
-          console.log('DatGateway now listening on port ' + port)
+          console.log('[dat-gateway] Now listening on port ' + port)
         })
         .catch(console.error)
     }
