@@ -1,5 +1,9 @@
 # dat-gateway
 
+[![Stability](https://img.shields.io/badge/stability-experimental-orange.svg)](https://nodejs.org/api/documentation.html#documentation_stability_index)
+[![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![Build Status](https://travis-ci.org/garbados/dat-gateway.svg?branch=master)](https://travis-ci.org/garbados/dat-gateway)
+
 A configurable in-memory [Dat](https://datproject.org/)-to-HTTP gateway, so you can visit Dat archives from your browser.
 
 If you want a browser that can visit Dat archives, check out [Beaker](https://beakerbrowser.com/).
