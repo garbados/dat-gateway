@@ -3,6 +3,7 @@
 const Dat = require('dat-node')
 const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
+const LRU = require('lru-cache')
 const resolveDat = require('dat-link-resolve')
 
 function log () {
@@ -15,12 +16,18 @@ function log () {
 
 module.exports =
 class DatGateway {
-  constructor ({ dir, dat }) {
+  constructor ({ dir, max, maxAge }) {
     this.dir = dir
-    this.datOptions = Object.assign({}, dat || { temp: true })
-    this.dats = {}
-    log('Starting gateway at %s with options %j', this.dir, this.datOptions)
-
+    this.datOptions = { temp: true }
+    log('Starting gateway at %s with options %j', this.dir, { max, maxAge })
+    this.cache = new LRU({
+      dispose: function (key, dat) {
+        log('Disposing of archive %s', key)
+        dat.close()
+      },
+      max,
+      maxAge
+    })
     this.server = http.createServer((req, res) => {
       log('%s %s', req.method, req.url)
       // TODO redirect /:key to /:key/
@@ -59,23 +66,13 @@ class DatGateway {
     return new Promise((resolve) => {
       this.server.close(resolve)
     }).then(() => {
-      const tasks = Object.keys(this.dats).map((key) => {
-        const dat = this.dats[key]
-        return new Promise((resolve, reject) => {
-          dat.close((err) => {
-            if (err) return reject(err)
-            else resolve()
-          })
-        })
-      })
-
-      return Promise.all(tasks)
+      this.cache.reset()
     })
   }
 
   getDat (key) {
     // check local cache
-    if (key in this.dats) return Promise.resolve(this.dats[key])
+    if (this.cache.has(key)) return Promise.resolve(this.cache.get(key))
     // retrieve from the web
     return new Promise((resolve, reject) => {
       const opts = Object.assign({}, this.datOptions, { key })
@@ -83,7 +80,7 @@ class DatGateway {
         if (err) {
           return reject(err)
         } else {
-          this.dats[key] = dat
+          this.cache.set(key, dat)
           dat.joinNetwork()
           dat.onrequest = hyperdriveHttp(dat.archive, { live: true, exposeHeaders: true })
           dat.archive.metadata.update(() => {
