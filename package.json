@@ -3,10 +3,10 @@
   "description": "A Dat-to-HTTP gateway and helper library.",
   "version": "1.0.0-alpha",
   "main": "index.js",
-  "bin": "binjs",
+  "bin": "bin.js",
   "scripts": {
     "start": "bin.js",
-    "test": "standard && dependency-check . && tap test/index.js"
+    "test": "standard && dependency-check . && mocha"
   },
   "dependencies": {
     "dat-link-resolve": "^2.1.0",
