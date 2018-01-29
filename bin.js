@@ -26,12 +26,22 @@ require('yargs')
           },
           default: '~/.dat-gateway',
           normalize: true
+        },
+        max: {
+          alias: 'm',
+          description: 'Maximum number of archives to serve at a time.',
+          default: 20
+        },
+        maxAge: {
+          alias: 'M',
+          description: 'Number of milliseconds before archives are removed from the cache.',
+          default: 10 * 60 * 1000 // ten minutes
         }
       })
     },
     handler: function (argv) {
-      const { port, dir } = argv
-      const gateway = new DatGateway({ dir })
+      const { port, dir, max, maxAge } = argv
+      const gateway = new DatGateway({ dir, max, maxAge })
       gateway
         .listen(port)
         .then(function () {

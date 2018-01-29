@@ -19,8 +19,6 @@ describe('dat-gateway', function () {
 
   it('should exist', function () {
     assert.equal(this.gateway.dir, './fixtures')
-    assert.ok(this.gateway.dats)
-    assert.equal(Object.keys(this.gateway.dats).length, 0)
   })
 
   it('should handle requests', function () {
