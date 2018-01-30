@@ -32,7 +32,7 @@ class DatGateway {
     })
   }
 
-  async getHandler () {
+  getHandler () {
     return this.getIndexHtml().then((welcome) => {
       return (req, res) => {
         log('%s %s', req.method, req.url)
@@ -65,13 +65,14 @@ class DatGateway {
     })
   }
 
-  async listen (port) {
-    const handler = await this.getHandler()
-    this.server = http.createServer(handler)
-    return new Promise((resolve, reject) => {
-      this.server.listen(port, (err) => {
-        if (err) return reject(err)
-        else return resolve()
+  listen (port) {
+    return this.getHandler().then((handler) => {
+      this.server = http.createServer(handler)
+      return new Promise((resolve, reject) => {
+        this.server.listen(port, (err) => {
+          if (err) return reject(err)
+          else return resolve()
+        })
       })
     })
   }
