@@ -78,7 +78,8 @@ class DatGateway {
 
   close () {
     return new Promise((resolve) => {
-      this.server.close(resolve)
+      if (this.server) this.server.close(resolve)
+      else resolve()
     }).then(() => {
       this.cache.reset()
     })
