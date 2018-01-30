@@ -24,8 +24,12 @@ class DatGateway {
     log('Starting gateway at %s with options %j', this.dir, { max, maxAge })
     this.cache = new LRU({
       dispose: function (key, dat) {
+        const start = Date.now()
         log('Disposing of archive %s', key)
-        dat.close()
+        dat.close(() => {
+          const end = Date.now()
+          log('Disposed of archive %s in %i ms', key, end - start)
+        })
       },
       max,
       maxAge
@@ -36,6 +40,7 @@ class DatGateway {
     return this.getIndexHtml().then((welcome) => {
       return (req, res) => {
         log('%s %s', req.method, req.url)
+        const start = Date.now()
         // TODO redirect /:key to /:key/
         let urlParts = req.url.split('/')
         let address = urlParts[1]
@@ -49,11 +54,14 @@ class DatGateway {
           return this.getDat(key)
         }).then((dat) => {
           // handle it!!
+          const end = Date.now()
+          log('%s %s | OK [%i ms]', req.method, req.url, end - start)
           req.url = `/${path}`
           dat.onrequest(req, res)
         }).catch((e) => {
-          log(e)
-          if (e.message === 'DNS record not found') {
+          const end = Date.now()
+          log('%s %s | ERROR %s [%i ms]', req.method, req.url, e.message, end - start)
+          if (e.message.indexOf('not found') > -1) {
             res.writeHead(404)
             res.end('Not found')
           } else {
@@ -106,11 +114,16 @@ class DatGateway {
         if (err) {
           return reject(err)
         } else {
-          this.cache.set(key, dat)
-          dat.joinNetwork()
-          dat.onrequest = hyperdriveHttp(dat.archive, { live: true, exposeHeaders: true })
-          dat.archive.metadata.update(() => {
-            resolve(dat)
+          dat.onrequest = hyperdriveHttp(dat.archive, { live: false, exposeHeaders: true })
+          dat.joinNetwork((err) => {
+            if (err) {
+              return reject(err)
+            } else if (dat.network.connections.length === 0) {
+              return reject(new Error('not found'))
+            } else {
+              this.cache.set(key, dat)
+              return resolve(dat)
+            }
           })
         }
       })
