@@ -1,7 +1,7 @@
 {
   "name": "dat-gateway",
   "description": "A Dat-to-HTTP gateway and helper library.",
-  "version": "1.1.0-alpha",
+  "version": "1.1.1-alpha",
   "main": "index.js",
   "bin": "bin.js",
   "scripts": {
@@ -34,5 +34,5 @@
     "Paul Frazee <pfrazee@gmail.com>",
     "Diana Thayer <garbados@gmail.com>"
   ],
-  "license": "GPL-3.0"
+  "license": "Apache-2.0"
 }
