@@ -1,8 +1,10 @@
 'use strict'
 
 const Dat = require('dat-node')
+const fs = require('fs')
 const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
+const path = require('path')
 const LRU = require('lru-cache')
 const resolveDat = require('dat-link-resolve')
 
@@ -28,32 +30,44 @@ class DatGateway {
       max,
       maxAge
     })
-    this.server = http.createServer((req, res) => {
-      log('%s %s', req.method, req.url)
-      // TODO redirect /:key to /:key/
-      let urlParts = req.url.split('/')
-      let address = urlParts[1]
-      let path = urlParts.slice(2).join('/')
-      return this.resolveDat(address).then((key) => {
-        return this.getDat(key)
-      }).then((dat) => {
-        // handle it!!
-        req.url = `/${path}`
-        dat.onrequest(req, res)
-      }).catch((e) => {
-        log(e)
-        if (e.message === 'DNS record not found') {
-          res.writeHead(404)
-          res.end('Not found')
-        } else {
-          res.writeHead(500)
-          res.end(JSON.stringify(e))
+  }
+
+  async getHandler () {
+    return this.getIndexHtml().then((welcome) => {
+      return (req, res) => {
+        log('%s %s', req.method, req.url)
+        // TODO redirect /:key to /:key/
+        let urlParts = req.url.split('/')
+        let address = urlParts[1]
+        let path = urlParts.slice(2).join('/')
+        if (!address && !path) {
+          res.writeHead(200)
+          res.end(welcome)
+          return Promise.resolve()
         }
-      })
+        return this.resolveDat(address).then((key) => {
+          return this.getDat(key)
+        }).then((dat) => {
+          // handle it!!
+          req.url = `/${path}`
+          dat.onrequest(req, res)
+        }).catch((e) => {
+          log(e)
+          if (e.message === 'DNS record not found') {
+            res.writeHead(404)
+            res.end('Not found')
+          } else {
+            res.writeHead(500)
+            res.end(JSON.stringify(e))
+          }
+        })
+      }
     })
   }
 
-  listen (port) {
+  async listen (port) {
+    const handler = await this.getHandler()
+    this.server = http.createServer(handler)
     return new Promise((resolve, reject) => {
       this.server.listen(port, (err) => {
         if (err) return reject(err)
@@ -67,6 +81,16 @@ class DatGateway {
       this.server.close(resolve)
     }).then(() => {
       this.cache.reset()
+    })
+  }
+
+  getIndexHtml () {
+    return new Promise((resolve, reject) => {
+      let filePath = path.join(__dirname, 'index.html')
+      fs.readFile(filePath, 'utf-8', (err, html) => {
+        if (err) return reject(err)
+        else return resolve(html)
+      })
     })
   }
 
