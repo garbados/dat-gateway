@@ -4,6 +4,7 @@
 [![NPM Version](https://img.shields.io/npm/v/dat-gateway.svg)](https://www.npmjs.com/package/dat-gateway)
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 [![Build Status](https://travis-ci.org/garbados/dat-gateway.svg?branch=master)](https://travis-ci.org/garbados/dat-gateway)
+[![Coverage Status](https://img.shields.io/coveralls/github/garbados/mastermind-game/master.svg)](https://coveralls.io/github/garbados/dat-gateway?branch=master)
 
 A configurable in-memory [Dat](https://datproject.org/)-to-HTTP gateway, so you can visit Dat archives from your browser.
 
