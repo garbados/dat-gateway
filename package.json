@@ -1,7 +1,7 @@
 {
   "name": "dat-gateway",
   "description": "A Dat-to-HTTP gateway and helper library.",
-  "version": "1.2.1-alpha",
+  "version": "1.2.2-alpha",
   "main": "index.js",
   "bin": "bin.js",
   "scripts": {
