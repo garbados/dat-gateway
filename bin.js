@@ -4,6 +4,7 @@
 
 const DatGateway = require('.')
 const os = require('os')
+const mkdirp = require('mkdirp')
 const pkg = require('./package.json')
 
 require('yargs')
@@ -36,14 +37,24 @@ require('yargs')
           alias: 'M',
           description: 'Number of milliseconds before archives are removed from the cache.',
           default: 10 * 60 * 1000 // ten minutes
+        },
+        persist: {
+          alias: 'P',
+          description: 'Persist archives to disk, rather than storing them in memory.',
+          default: false
         }
       })
     },
     handler: function (argv) {
-      const { port, dir, max, maxAge } = argv
-      const gateway = new DatGateway({ dir, max, maxAge })
+      const { port, dir, max, maxAge, persist } = argv
+      const dat = { temp: !persist }
+      mkdirp.sync(dir) // make sure it exists
+      const gateway = new DatGateway({ dir, dat, max, maxAge })
       gateway
-        .listen(port)
+        .setup()
+        .then(() => {
+          return gateway.listen(port)
+        })
         .then(function () {
           console.log('[dat-gateway] Now listening on port ' + port)
         })

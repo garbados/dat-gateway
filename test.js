@@ -9,6 +9,7 @@ const dir = './fixtures'
 describe('dat-gateway', function () {
   before(function () {
     this.gateway = new DatGateway({ dir })
+    return this.gateway.setup()
   })
 
   afterEach(function () {
@@ -32,6 +33,7 @@ describe('dat-gateway', function () {
         req.on('error', console.log)
       })
     }).then((res) => {
+      // should display empty index, s.t. an attacker cannot determine
       assert.equal(res.statusCode, 200)
     }).catch((e) => {
       console.error(e)
@@ -40,13 +42,14 @@ describe('dat-gateway', function () {
   })
 
   it('should handle requests for dead addresses', function () {
-    this.timeout(10000)
+    this.timeout(0)
     return this.gateway.listen(5917).then(() => {
       return new Promise((resolve) => {
         http.get('http://localhost:5917/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642', resolve)
       })
     }).then((res) => {
-      assert.equal(res.statusCode, 404)
+      // show blank index
+      assert.equal(res.statusCode, 200)
     }).catch((e) => {
       console.error(e)
       throw e
