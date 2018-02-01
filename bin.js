@@ -28,13 +28,8 @@ require('yargs')
           default: '~/.dat-gateway',
           normalize: true
         },
-        max: {
-          alias: 'm',
-          description: 'Maximum number of archives to serve at a time.',
-          default: 20
-        },
-        maxAge: {
-          alias: 'M',
+        ttl: {
+          alias: 't',
           description: 'Number of milliseconds before archives are removed from the cache.',
           default: 10 * 60 * 1000 // ten minutes
         },
@@ -46,10 +41,10 @@ require('yargs')
       })
     },
     handler: function (argv) {
-      const { port, dir, max, maxAge, persist } = argv
+      const { port, dir, ttl, persist } = argv
       const dat = { temp: !persist }
       mkdirp.sync(dir) // make sure it exists
-      const gateway = new DatGateway({ dir, dat, max, maxAge })
+      const gateway = new DatGateway({ dir, dat, ttl })
       gateway
         .setup()
         .then(() => {
