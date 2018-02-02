@@ -16,10 +16,25 @@ function log () {
 
 module.exports =
 class DatGateway extends DatLibrarian {
-  constructor ({ dir, dat, max, net, ttl }) {
+  constructor ({ dir, dat, max, net, period, ttl }) {
     super({ dir, dat, net })
     this.max = max
     this.ttl = ttl
+    this.period = period
+    this.lru = {}
+    if (this.ttl && this.period) {
+      this.cleaner = setInterval(() => {
+        const tasks = Object.keys(this.dats).filter((key) => {
+          const now = Date.now()
+          let lastRead = this.lru[key]
+          return (lastRead && (now - lastRead) > this.tll)
+        }).map((key) => {
+          delete this.lru[key]
+          return this.remove(key)
+        })
+        return Promise.all(tasks)
+      }, this.period)
+    }
   }
 
   load () {
@@ -49,6 +64,7 @@ class DatGateway extends DatLibrarian {
   }
 
   close () {
+    if (this.cleaner) clearInterval(this.cleaner)
     return new Promise((resolve) => {
       if (this.server) this.server.close(resolve)
       else resolve()
@@ -107,11 +123,23 @@ class DatGateway extends DatLibrarian {
   add () {
     return super.add.apply(this, arguments).then((dat) => {
       log('Adding HTTP handler to archive...')
-      dat.onrequest = hyperdriveHttp(dat.archive, { live: true, exposeHeaders: true })
+      if (!dat.onrequest) dat.onrequest = hyperdriveHttp(dat.archive, { live: true, exposeHeaders: true })
       return new Promise((resolve) => {
-        dat.archive.metadata.update(1, () => {
-          resolve(dat)
-        })
+        /*
+        Wait for the archive to populate OR for 3s to pass,
+        so that addresses for archives which don't exist
+        don't hold us up all night.
+         */
+        let isDone = false
+        const done = () => {
+          if (isDone) return null
+          isDone = true
+          const key = dat.archive.key.toString('hex')
+          this.lru[key] = Date.now()
+          return resolve(dat)
+        }
+        dat.archive.metadata.update(1, done)
+        setTimeout(done, 3000)
       })
     })
   }
