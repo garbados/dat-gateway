@@ -29,19 +29,23 @@ require('yargs')
           normalize: true
         },
         max: {
-          alias: 'M',
+          alias: 'm',
           description: 'Maximum number of archives allowed in the cache.',
           default: 20
         },
-        ttl: {
-          alias: 't',
-          description: 'Number of milliseconds before archives are removed from the cache.',
-          default: 10 * 60 * 1000 // ten minutes
+        period: {
+          description: 'Number of milliseconds between cleaning the cache of expired archives.',
+          default: 10 * 1000 // every ten seconds
         },
         persist: {
           alias: 'P',
           description: 'Persist archives to disk, rather than storing them in memory.',
           default: false
+        },
+        ttl: {
+          alias: 't',
+          description: 'Number of milliseconds before archives expire.',
+          default: 10 * 60 * 1000 // ten minutes
         }
       })
     },

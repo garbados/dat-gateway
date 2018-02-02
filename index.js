@@ -121,6 +121,10 @@ class DatGateway extends DatLibrarian {
   }
 
   add () {
+    if (this.keys.length >= this.max) {
+      const error = new Error('Cache is full. Cannot add more archives.')
+      return Promise.reject(error)
+    }
     return super.add.apply(this, arguments).then((dat) => {
       log('Adding HTTP handler to archive...')
       if (!dat.onrequest) dat.onrequest = hyperdriveHttp(dat.archive, { live: true, exposeHeaders: true })
