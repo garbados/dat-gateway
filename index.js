@@ -24,11 +24,13 @@ class DatGateway extends DatLibrarian {
     this.lru = {}
     if (this.ttl && this.period) {
       this.cleaner = setInterval(() => {
+        log('Checking for expired archives...')
         const tasks = Object.keys(this.dats).filter((key) => {
           const now = Date.now()
           let lastRead = this.lru[key]
           return (lastRead && (now - lastRead) > this.tll)
         }).map((key) => {
+          log('Deleting expired archive %s', key)
           delete this.lru[key]
           return this.remove(key)
         })
