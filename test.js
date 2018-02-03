@@ -6,12 +6,14 @@ const DatGateway = require('.')
 const rimraf = require('rimraf')
 
 const dir = 'fixtures'
+const ttl = 4000
+const period = 1000
 
 describe('dat-gateway', function () {
   this.timeout(0)
 
   before(function () {
-    this.gateway = new DatGateway({ dir })
+    this.gateway = new DatGateway({ dir, ttl, period })
     return this.gateway.load().then(() => {
       return this.gateway.listen(5917)
     })
@@ -49,6 +51,18 @@ describe('dat-gateway', function () {
     }).catch((e) => {
       console.error(e)
       throw e
+    })
+  })
+
+  it('should proactively deleted expired archives', function () {
+    return new Promise((resolve) => {
+      const checker = setInterval(() => {
+        // assert that they have been deleted
+        if (this.gateway.keys.length === 0) {
+          clearInterval(checker)
+          return resolve()
+        }
+      }, ttl)
     })
   })
 })

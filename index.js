@@ -28,7 +28,7 @@ class DatGateway extends DatLibrarian {
         const tasks = Object.keys(this.dats).filter((key) => {
           const now = Date.now()
           let lastRead = this.lru[key]
-          return (lastRead && (now - lastRead) > this.tll)
+          return (lastRead && ((now - lastRead) > this.ttl))
         }).map((key) => {
           log('Deleting expired archive %s', key)
           delete this.lru[key]
