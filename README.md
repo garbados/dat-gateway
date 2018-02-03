@@ -27,19 +27,15 @@ $ dat-gateway -h
 dat-gateway
 
 Options:
-  --version      Show version number                                   [boolean]
-  --config       Path to JSON config file
-  --port, -p     Port for the gateway to listen on.              [default: 3000]
-  --dir, -d      Directory to use as a cache.
-                                            [string] [default: "~/.dat-gateway"]
-  --max, -m      Maximum number of archives allowed in the cache.  [default: 20]
-  --period       Number of milliseconds between cleaning the cache of expired
-                 archives.                                      [default: 10000]
-  --persist, -P  Persist archives to disk, rather than storing them in memory.
-                                                                [default: false]
-  --ttl, -t      Number of milliseconds before archives expire.[default: 600000]
-  -h, --help     Show help                                             [boolean]
-
+  --version   Show version number                                      [boolean]
+  --config    Path to JSON config file
+  --port, -p  Port for the gateway to listen on.                 [default: 3000]
+  --dir, -d   Directory to use as a cache.  [string] [default: "~/.dat-gateway"]
+  --max, -m   Maximum number of archives allowed in the cache.     [default: 20]
+  --period    Number of milliseconds between cleaning the cache of expired
+              archives.                                         [default: 10000]
+  --ttl, -t   Number of milliseconds before archives expire.   [default: 600000]
+  -h, --help  Show help                                                [boolean]
 ```
 
 You can visit Dat archives through the gateway using a route like this:
@@ -59,6 +55,8 @@ The gateway will even resolve URLs using [Dat-DNS](https://github.com/beakerbrow
 ```
 http://localhost:3000/garbados.hashbase.io/icons/favicon.ico
 ```
+
+The gateway will peer archives until they expire from the cache, at which point it proactively halts them and deletes them from disk.
 
 ## Contributions
 

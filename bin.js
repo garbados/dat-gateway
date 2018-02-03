@@ -37,11 +37,6 @@ require('yargs')
           description: 'Number of milliseconds between cleaning the cache of expired archives.',
           default: 10 * 1000 // every ten seconds
         },
-        persist: {
-          alias: 'P',
-          description: 'Persist archives to disk, rather than storing them in memory.',
-          default: false
-        },
         ttl: {
           alias: 't',
           description: 'Number of milliseconds before archives expire.',
@@ -50,10 +45,9 @@ require('yargs')
       })
     },
     handler: function (argv) {
-      const { port, dir, max, persist, ttl } = argv
-      const dat = { temp: !persist }
+      const { port, dir, max, ttl } = argv
       mkdirp.sync(dir) // make sure it exists
-      const gateway = new DatGateway({ dir, dat, max, ttl })
+      const gateway = new DatGateway({ dir, max, ttl })
       gateway
         .load()
         .then(() => {
