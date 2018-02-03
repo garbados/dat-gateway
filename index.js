@@ -1,13 +1,10 @@
 'use strict'
 
-const Dat = require('dat-node')
+const DatLibrarian = require('dat-librarian')
 const fs = require('fs')
 const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const path = require('path')
-const NodeCache = require('node-cache')
-const resolveDat = require('dat-link-resolve')
-const rimraf = require('rimraf')
 
 function log () {
   let msg = arguments[0]
@@ -18,54 +15,47 @@ function log () {
 }
 
 module.exports =
-class DatGateway {
-  constructor ({ dir, dat, ttl }) {
-    this.dir = dir
-    this.datOptions = Object.assign({}, { temp: true }, dat || {})
-    log('Starting gateway at %s with options %j', this.dir, { dat, ttl })
-    this.cache = new NodeCache({
-      useClones: false,
-      stdTTL: ttl
-    })
-    this.cache.on('delete', (key, dat) => {
-      const start = Date.now()
-      log('Disposing of archive %s', key)
-      dat.close(() => {
-        const end = Date.now()
-        rimraf.sync(path.join(this.dir, key))
-        log('Disposed of archive %s in %i ms', key, end - start)
-      })
-    })
+class DatGateway extends DatLibrarian {
+  constructor ({ dir, dat, max, net, period, ttl }) {
+    super({ dir, dat, net })
+    this.max = max
+    this.ttl = ttl
+    this.period = period
+    this.lru = {}
+    if (this.ttl && this.period) {
+      this.cleaner = setInterval(() => {
+        log('Checking for expired archives...')
+        const tasks = Object.keys(this.dats).filter((key) => {
+          const now = Date.now()
+          let lastRead = this.lru[key]
+          return (lastRead && ((now - lastRead) > this.ttl))
+        }).map((key) => {
+          log('Deleting expired archive %s', key)
+          delete this.lru[key]
+          return this.remove(key)
+        })
+        return Promise.all(tasks)
+      }, this.period)
+    }
   }
 
-  setup () {
+  load () {
     log('Setting up...')
     return this.getHandler().then((handler) => {
       log('Setting up server...')
       this.server = http.createServer(handler)
     }).then(() => {
-      // check for existing archives if non-temp
-      if (this.datOptions.temp) return null
-      return new Promise((resolve, reject) => {
-        // look for existing archives...
-        log('Looking for existing archives...')
-        fs.readdir(this.dir, (err, keys) => {
-          if (err) return reject(err)
-          else resolve(keys)
-        })
-      }).then((keys) => {
-        const tasks = keys.map((key) => {
-          // setup each existing archive...
-          log('[%s] Setting up existing archive...', key)
-          return this.getDat(key)
-        })
-        return Promise.all(tasks).then(() => {
-          log('Existing archives set up.')
-        })
-      })
+      log('Loading pre-existing archives...')
+      // load pre-existing archives
+      return super.load()
     })
   }
 
+  /**
+   * Promisification of server.listen()
+   * @param  {Number} port Port to listen on.
+   * @return {Promise}     Promise that resolves once the server has started listening.
+   */
   listen (port) {
     return new Promise((resolve, reject) => {
       this.server.listen(port, (err) => {
@@ -76,11 +66,12 @@ class DatGateway {
   }
 
   close () {
+    if (this.cleaner) clearInterval(this.cleaner)
     return new Promise((resolve) => {
       if (this.server) this.server.close(resolve)
       else resolve()
     }).then(() => {
-      this.cache.flushAll()
+      return super.close()
     })
   }
 
@@ -103,19 +94,19 @@ class DatGateway {
         let address = urlParts[1]
         let path = urlParts.slice(2).join('/')
         log('[%s] %s %s', address, req.method, path)
+        // return index
         if (!address && !path) {
           res.writeHead(200)
           res.end(welcome)
           return Promise.resolve()
         }
-        return this.resolveDat(address).then((key) => {
-          return this.getDat(key).then((dat) => {
-            // handle it!!
-            const end = Date.now()
-            log('[%s] %s %s | OK [%i ms]', address, req.method, path, end - start)
-            req.url = `/${path}`
-            dat.onrequest(req, res)
-          })
+        // return the archive
+        return this.add(address).then((dat) => {
+          // handle it!!
+          const end = Date.now()
+          log('[%s] %s %s | OK [%i ms]', address, req.method, path, end - start)
+          req.url = `/${path}`
+          dat.onrequest(req, res)
         }).catch((e) => {
           const end = Date.now()
           log('[%s] %s %s | ERROR %s [%i ms]', address, req.method, path, e.message, end - start)
@@ -131,54 +122,30 @@ class DatGateway {
     })
   }
 
-  getDat (key) {
-    return new Promise((resolve, reject) => {
-      log('[%s] Retrieving archive...', key)
-      // check local cache
-      let dat = this.cache.get(key)
-      if (dat) {
-        log('[%s] Archive found in cache', key)
-        return resolve(dat)
-      }
-      // retrieve from the web
-      log('[%s] Not in cache. Retrieving from the web...', key)
-      const opts = Object.assign({}, this.datOptions, { key })
-      const dir = path.join(this.dir, key)
-      Dat(dir, opts, (err, dat) => {
-        if (err) {
-          return reject(err)
-        } else {
-          dat.onrequest = hyperdriveHttp(dat.archive, { live: false, exposeHeaders: true })
-          this.cache.set(key, dat)
-          dat.joinNetwork()
-          let isDone = false
-          const done = () => {
-            if (!isDone) {
-              isDone = true
-              if (dat.network.connections.length === 0) {
-                log('[%s] No peers found. Using local.', key)
-                return resolve(dat)
-              } else {
-                log('[%s] Archive retrieved.', key)
-                return resolve(dat)
-              }
-            }
-          }
-          dat.archive.metadata.update(1, done)
-          setTimeout(done, 3000)
+  add () {
+    if (this.keys.length >= this.max) {
+      const error = new Error('Cache is full. Cannot add more archives.')
+      return Promise.reject(error)
+    }
+    return super.add.apply(this, arguments).then((dat) => {
+      log('Adding HTTP handler to archive...')
+      if (!dat.onrequest) dat.onrequest = hyperdriveHttp(dat.archive, { live: true, exposeHeaders: true })
+      return new Promise((resolve) => {
+        /*
+        Wait for the archive to populate OR for 3s to pass,
+        so that addresses for archives which don't exist
+        don't hold us up all night.
+         */
+        let isDone = false
+        const done = () => {
+          if (isDone) return null
+          isDone = true
+          const key = dat.archive.key.toString('hex')
+          this.lru[key] = Date.now()
+          return resolve(dat)
         }
-      })
-    })
-  }
-
-  resolveDat (address) {
-    return new Promise((resolve, reject) => {
-      resolveDat(address, (err, key) => {
-        if (err) {
-          return reject(err)
-        } else {
-          return resolve(key)
-        }
+        dat.archive.metadata.update(1, done)
+        setTimeout(done, 3000)
       })
     })
   }
