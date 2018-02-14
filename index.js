@@ -17,6 +17,8 @@ function log () {
 module.exports =
 class DatGateway extends DatLibrarian {
   constructor ({ dir, dat, max, net, period, ttl }) {
+    dat = dat || {}
+    dat.temp = dat.temp || true // store dats in memory only
     super({ dir, dat, net })
     this.max = max
     this.ttl = ttl

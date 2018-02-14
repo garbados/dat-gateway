@@ -35,7 +35,7 @@ require('yargs')
         },
         period: {
           description: 'Number of milliseconds between cleaning the cache of expired archives.',
-          default: 10 * 1000 // every ten seconds
+          default: 60 * 1000 // every minute
         },
         ttl: {
           alias: 't',
@@ -45,9 +45,9 @@ require('yargs')
       })
     },
     handler: function (argv) {
-      const { port, dir, max, ttl } = argv
+      const { dir, max, period, port, ttl } = argv
       mkdirp.sync(dir) // make sure it exists
-      const gateway = new DatGateway({ dir, max, ttl })
+      const gateway = new DatGateway({ dir, max, period, ttl })
       gateway
         .load()
         .then(() => {
