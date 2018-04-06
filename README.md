@@ -58,6 +58,24 @@ http://localhost:3000/garbados.hashbase.io/icons/favicon.ico
 
 The gateway will peer archives until they expire from the cache, at which point it proactively halts them and deletes them from disk.
 
+The gateway also supports replicating a hyperdrive instance using [websockets](https://github.com/maxogden/websocket-stream)
+
+```javascript
+const Websocket = require('websocket-stream')
+const hyperdrive = require('hyperdrive')
+
+const key = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
+const url = `ws://localhost:3000/${key}`
+
+const archive = hyperdrive('./somewhere', key)
+
+const socket = websocket(url)
+
+// Replicate through the socket
+socket.pipe(archive.replicate()).pipe(socket)
+
+```
+
 ## Contributions
 
 All contributions are welcome: bug reports, feature requests, "why doesn't this work" questions, patches for fixes and features, etc. For all of the above, [file an issue](https://github.com/garbados/dat-gateway/issues) or [submit a pull request](https://github.com/garbados/dat-gateway/pulls).

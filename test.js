@@ -4,6 +4,9 @@ const assert = require('assert')
 const http = require('http')
 const DatGateway = require('.')
 const rimraf = require('rimraf')
+const hyperdrive = require('hyperdrive')
+const websocket = require('websocket-stream')
+const ram = require('random-access-memory')
 
 const dir = 'fixtures'
 const ttl = 4000
@@ -63,6 +66,33 @@ describe('dat-gateway', function () {
           return resolve()
         }
       }, ttl)
+    })
+  })
+
+  it('should handle websockets for replication', function () {
+    // Key for gardos.hashbase.io
+    const key = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
+
+    const url = `ws://localhost:5917/${key}`
+
+    const archive = hyperdrive(ram, key)
+    const socket = websocket(url)
+
+    socket.pipe(archive.replicate()).pipe(socket)
+
+    return new Promise((resolve, reject) => {
+      setTimeout(() => {
+        archive.readFile('/icons/favicon.ico', (e, content) => {
+          if (e) reject(e)
+          else resolve(content)
+        })
+      }, 3000)
+    }).then((content) => {
+      socket.end()
+    }, (e) => {
+      socket.end()
+      console.error(e.message)
+      throw e
     })
   })
 })

@@ -17,6 +17,7 @@
   "devDependencies": {
     "dependency-check": "^2.9.1",
     "mocha": "^5.0.0",
+    "random-access-memory": "^2.4.0",
     "rimraf": "^2.6.2",
     "standard": "^10.0.3"
   },

@@ -47,11 +47,11 @@ class DatGateway extends DatLibrarian {
     return this.getHandler().then((handler) => {
       log('Setting up server...')
       this.server = http.createServer(handler)
-      const websocketHandler = this.getWebsocketHandler();
+      const websocketHandler = this.getWebsocketHandler()
       this.websocketServer = Websocket.createServer({
         perMessageDeflate: false,
         server: this.server
-      }, websocketHandler);
+      }, websocketHandler)
     }).then(() => {
       log('Loading pre-existing archives...')
       // load pre-existing archives
@@ -96,7 +96,7 @@ class DatGateway extends DatLibrarian {
   getWebsocketHandler () {
     return (stream, req) => {
       const urlParts = req.url.split('/')
-      const address = urlParts[1];
+      const address = urlParts[1]
 
       if (!address) {
         stream.end('Must provide archive key')
@@ -104,11 +104,11 @@ class DatGateway extends DatLibrarian {
       }
 
       return this.add(address).then((dat) => {
-        const archive = dat.archive;
-        stream.pipe(archive.replicate()).pipe(stream);
+        const archive = dat.archive
+        stream.pipe(archive.replicate()).pipe(stream)
       }).catch((e) => {
-        stream.end(e.message);
-      });
+        stream.end(e.message)
+      })
     }
   }
 
