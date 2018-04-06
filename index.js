@@ -5,6 +5,7 @@ const fs = require('fs')
 const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const path = require('path')
+const Websocket = require('websocket-stream')
 
 function log () {
   let msg = arguments[0]
@@ -46,6 +47,11 @@ class DatGateway extends DatLibrarian {
     return this.getHandler().then((handler) => {
       log('Setting up server...')
       this.server = http.createServer(handler)
+      const websocketHandler = this.getWebsocketHandler();
+      this.websocketServer = Websocket.createServer({
+        perMessageDeflate: false,
+        server: this.server
+      }, websocketHandler);
     }).then(() => {
       log('Loading pre-existing archives...')
       // load pre-existing archives
@@ -85,6 +91,25 @@ class DatGateway extends DatLibrarian {
         else return resolve(html)
       })
     })
+  }
+
+  getWebsocketHandler () {
+    return (stream, req) => {
+      const urlParts = req.url.split('/')
+      const address = urlParts[1];
+
+      if (!address) {
+        stream.end('Must provide archive key')
+        return Promise.resolve()
+      }
+
+      return this.add(address).then((dat) => {
+        const archive = dat.archive;
+        stream.pipe(archive.replicate()).pipe(stream);
+      }).catch((e) => {
+        stream.end(e.message);
+      });
+    }
   }
 
   getHandler () {
