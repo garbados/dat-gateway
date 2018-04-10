@@ -75,18 +75,25 @@ describe('dat-gateway', function () {
 
     const url = `ws://localhost:5917/${key}`
 
-    const archive = hyperdrive(ram, key)
-    const socket = websocket(url)
-
-    socket.pipe(archive.replicate()).pipe(socket)
+    let socket = null
 
     return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        archive.readFile('/icons/favicon.ico', (e, content) => {
-          if (e) reject(e)
-          else resolve(content)
-        })
-      }, 3000)
+      const archive = hyperdrive(ram, Buffer.from(key, 'hex'))
+      archive.once('error', reject)
+      archive.once('ready', () => {
+        socket = websocket(url)
+
+        socket.pipe(archive.replicate({
+          live: true
+        })).pipe(socket)
+
+        setTimeout(() => {
+          archive.readFile('/icons/favicon.ico', (e, content) => {
+            if (e) reject(e)
+            else resolve(content)
+          })
+        }, 3000)
+      })
     }).then((content) => {
       socket.end()
     }, (e) => {

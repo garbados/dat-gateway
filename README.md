@@ -69,11 +69,12 @@ const url = `ws://localhost:3000/${key}`
 
 const archive = hyperdrive('./somewhere', key)
 
-const socket = websocket(url)
+archive.once('ready', () => {
+  const socket = websocket(url)
 
-// Replicate through the socket
-socket.pipe(archive.replicate()).pipe(socket)
-
+  // Replicate through the socket
+  socket.pipe(archive.replicate()).pipe(socket)
+})
 ```
 
 ## Contributions
