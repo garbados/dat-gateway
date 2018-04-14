@@ -117,6 +117,7 @@ class DatGateway extends DatLibrarian {
   getHandler () {
     return this.getIndexHtml().then((welcome) => {
       return (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*')
         const start = Date.now()
         // TODO redirect /:key to /:key/
         let urlParts = req.url.split('/')
@@ -126,7 +127,7 @@ class DatGateway extends DatLibrarian {
         // return index
         if (!address && !path) {
           res.writeHead(200)
-          res.end(welcome)
+          res.end('dat-gateway')
           return Promise.resolve()
         }
         // return the archive
