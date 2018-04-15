@@ -99,20 +99,26 @@ class DatGateway extends DatLibrarian {
     return (stream, req) => {
       const urlParts = req.url.split('/')
       const address = urlParts[1]
-
       if (!address) {
         stream.end('Must provide archive key')
         return Promise.resolve()
       }
-
-      return this.add(address).then((dat) => {
-        const archive = dat.archive
-        stream.pipe(archive.replicate({
-          live: true
-        })).pipe(stream)
-      }).catch((e) => {
-        stream.end(e.message)
-      })
+      if (address === 'peers') {
+        Object.keys(this.dats).forEach((key) => {
+          let dat = this.dats[key]
+          let connections = dat.network.connections.length
+          stream.write(key + ':' + connections)
+        })
+      } else {
+        return this.add(address).then((dat) => {
+          const archive = dat.archive
+          stream.pipe(archive.replicate({
+            live: true
+          })).pipe(stream)
+        }).catch((e) => {
+          stream.end(e.message)
+        })
+      }
     }
   }
 
@@ -129,7 +135,7 @@ class DatGateway extends DatLibrarian {
         // return index
         if (!address && !path) {
           res.writeHead(200)
-          res.end('dat-gateway')
+          res.end(welcome)
           return Promise.resolve()
         }
         // return the archive
