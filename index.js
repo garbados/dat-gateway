@@ -107,7 +107,11 @@ class DatGateway extends DatLibrarian {
         Object.keys(this.dats).forEach((key) => {
           let dat = this.dats[key]
           let connections = dat.network.connections.length
-          stream.write(key + ':' + connections)
+          try {
+            stream.write(key + ':' + connections)
+          } catch (e) {
+            console.log('Error with websocket: ' + e)
+          }
         })
       } else {
         return this.add(address).then((dat) => {
