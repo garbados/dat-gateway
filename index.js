@@ -19,7 +19,9 @@ module.exports =
 class DatGateway extends DatLibrarian {
   constructor ({ dir, dat, max, net, period, ttl }) {
     dat = dat || {}
-    dat.temp = dat.temp || true // store dats in memory only
+    if (typeof dat.temp === 'undefined') {
+      dat.temp = dat.temp || true // store dats in memory only
+    }
     super({ dir, dat, net })
     this.max = max
     this.ttl = ttl
@@ -97,26 +99,37 @@ class DatGateway extends DatLibrarian {
     return (stream, req) => {
       const urlParts = req.url.split('/')
       const address = urlParts[1]
-
       if (!address) {
         stream.end('Must provide archive key')
         return Promise.resolve()
       }
-
-      return this.add(address).then((dat) => {
-        const archive = dat.archive
-        stream.pipe(archive.replicate({
-          live: true
-        })).pipe(stream)
-      }).catch((e) => {
-        stream.end(e.message)
-      })
+      if (address === 'peers') {
+        Object.keys(this.dats).forEach((key) => {
+          let dat = this.dats[key]
+          let connections = dat.network.connections.length
+          try {
+            stream.write(key + ':' + connections)
+          } catch (e) {
+            console.log('Error with websocket: ' + e)
+          }
+        })
+      } else {
+        return this.add(address).then((dat) => {
+          const archive = dat.archive
+          stream.pipe(archive.replicate({
+            live: true
+          })).pipe(stream)
+        }).catch((e) => {
+          stream.end(e.message)
+        })
+      }
     }
   }
 
   getHandler () {
     return this.getIndexHtml().then((welcome) => {
       return (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*')
         const start = Date.now()
         // TODO redirect /:key to /:key/
         let urlParts = req.url.split('/')
