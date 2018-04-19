@@ -159,15 +159,18 @@ class DatGateway extends DatLibrarian {
 
         // redirect to subdomain
         if (!isRedirecting && this.redirect) {
-          // TODO: Detect DatDNS addresses
-          let encodedAddress = hexTo32.encode(address)
-          let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search||''}`
+          let addressPromise = (address.length === 64) ? Promise.resolve(address) : this.add(address).then((dat) => dat.archive.key.toString('hex'))
 
-          log('Redirecting %s to %s', address, redirectURL)
-          res.setHeader('Location', redirectURL)
-          res.writeHead(302)
-          res.end();
-          return Promise.resolve()
+          return addressPromise.then((resolvedAddress) => {
+            // TODO: Detect DatDNS addresses
+            let encodedAddress = hexTo32.encode(resolvedAddress)
+            let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search||''}`
+
+            log('Redirecting %s to %s', address, redirectURL)
+            res.setHeader('Location', redirectURL)
+            res.writeHead(302)
+            res.end();
+          })
         }
 
         // return the archive
