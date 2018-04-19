@@ -6,6 +6,10 @@ const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const path = require('path')
 const Websocket = require('websocket-stream')
+const url = require('url')
+const hexTo32 = require('hex-to-32')
+
+const BASE_32_KEY_LENGTH = 52
 
 function log () {
   let msg = arguments[0]
@@ -17,12 +21,13 @@ function log () {
 
 module.exports =
 class DatGateway extends DatLibrarian {
-  constructor ({ dir, dat, max, net, period, ttl }) {
+  constructor({ dir, dat, max, net, period, ttl, redirect }) {
     dat = dat || {}
     if (typeof dat.temp === 'undefined') {
       dat.temp = dat.temp || true // store dats in memory only
     }
     super({ dir, dat, net })
+    this.redirect = redirect
     this.max = max
     this.ttl = ttl
     this.period = period
@@ -132,16 +137,39 @@ class DatGateway extends DatLibrarian {
         res.setHeader('Access-Control-Allow-Origin', '*')
         const start = Date.now()
         // TODO redirect /:key to /:key/
-        let urlParts = req.url.split('/')
-        let address = urlParts[1]
-        let path = urlParts.slice(2).join('/')
+        let requestURL = `http://${req.headers.host}${req.url}`
+        let urlParts = url.parse(requestURL)
+        let pathParts = urlParts.pathname.split('/').slice(1)
+        let hostnameParts = urlParts.hostname.split('.')
+
+        let subdomain = hostnameParts[0]
+        let isRedirecting = this.redirect && (subdomain.length === BASE_32_KEY_LENGTH)
+
+        let address = isRedirecting ? hexTo32.decode(subdomain) : pathParts[0];
+        let path = (isRedirecting ? pathParts : pathParts.slice(1)).join('/')
+
         log('[%s] %s %s', address, req.method, path)
+
         // return index
-        if (!address && !path) {
+        if (!isRedirecting && !address) {
           res.writeHead(200)
           res.end(welcome)
           return Promise.resolve()
         }
+
+        // redirect to subdomain
+        if (!isRedirecting && this.redirect) {
+          // TODO: Detect DatDNS addresses
+          let encodedAddress = hexTo32.encode(address)
+          let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search||''}`
+
+          log('Redirecting %s to %s', address, redirectURL)
+          res.setHeader('Location', redirectURL)
+          res.writeHead(302)
+          res.end();
+          return Promise.resolve()
+        }
+
         // return the archive
         return this.add(address).then((dat) => {
           // handle it!!
