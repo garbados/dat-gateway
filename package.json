@@ -16,6 +16,8 @@
     "yargs": "^11.0.0"
   },
   "devDependencies": {
+    "axios": "^0.18.0",
+    "delay": "^2.0.0",
     "dependency-check": "^2.9.1",
     "mocha": "^5.0.0",
     "random-access-memory": "^2.4.0",
