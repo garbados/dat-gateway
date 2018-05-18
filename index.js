@@ -21,7 +21,7 @@ function log () {
 
 module.exports =
 class DatGateway extends DatLibrarian {
-  constructor({ dir, dat, max, net, period, ttl, redirect }) {
+  constructor ({ dir, dat, max, net, period, ttl, redirect }) {
     dat = dat || {}
     if (typeof dat.temp === 'undefined') {
       dat.temp = dat.temp || true // store dats in memory only
@@ -102,6 +102,9 @@ class DatGateway extends DatLibrarian {
 
   getWebsocketHandler () {
     return (stream, req) => {
+      stream.on('error', function (e) {
+        log('getWebsocketHandler has error: ' + e)
+      })
       const urlParts = req.url.split('/')
       const address = urlParts[1]
       if (!address) {
@@ -145,7 +148,7 @@ class DatGateway extends DatLibrarian {
         let subdomain = hostnameParts[0]
         let isRedirecting = this.redirect && (subdomain.length === BASE_32_KEY_LENGTH)
 
-        let address = isRedirecting ? hexTo32.decode(subdomain) : pathParts[0];
+        let address = isRedirecting ? hexTo32.decode(subdomain) : pathParts[0]
         let path = (isRedirecting ? pathParts : pathParts.slice(1)).join('/')
 
         log('[%s] %s %s', address, req.method, path)
@@ -162,12 +165,12 @@ class DatGateway extends DatLibrarian {
           return this.resolveName(address).then((resolvedAddress) => {
             // TODO: Detect DatDNS addresses
             let encodedAddress = hexTo32.encode(resolvedAddress)
-            let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search||''}`
+            let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search || ''}`
 
             log('Redirecting %s to %s', address, redirectURL)
             res.setHeader('Location', redirectURL)
             res.writeHead(302)
-            res.end();
+            res.end()
           })
         }
 
@@ -175,7 +178,7 @@ class DatGateway extends DatLibrarian {
         if (path === '.well-known/dat') {
           return this.resolveName(address).then((resolvedAddress) => {
             log('Resolving address %s to %s', address, resolvedAddress)
-            
+
             res.writeHead(200)
             res.end(`dat://${resolvedAddress}\nttl=3600`)
           })
