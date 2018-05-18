@@ -211,15 +211,24 @@ class DatGateway extends DatLibrarian {
       if (this.keys.indexOf(key) === -1) {
         return this.add(address)
       } else {
+        this.lru[key] = Date.now()
         return this.get(key)
       }
     })
   }
 
+  clearOldest () {
+    const sortOldestFirst = Object.keys(this.lru).sort((a, b) => {
+      return this.lru[a] - this.lru[b]
+    })
+    const oldest = sortOldestFirst[0]
+    return this.remove(oldest)
+  }
+
   add () {
     if (this.keys.length >= this.max) {
-      const error = new Error('Cache is full. Cannot add more archives.')
-      return Promise.reject(error)
+      // Delete the oldest item when we reach capacity and try again
+      return this.clearOldest().then(() => this.add.apply(this, arguments))
     }
     return super.add.apply(this, arguments).then((dat) => {
       log('Adding HTTP handler to archive...')
