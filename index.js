@@ -122,7 +122,7 @@ class DatGateway extends DatLibrarian {
           }
         })
       } else {
-        return this.add(address).then((dat) => {
+        return this.addIfNew(address).then((dat) => {
           const archive = dat.archive
           stream.pipe(archive.replicate({
             live: true
@@ -162,7 +162,7 @@ class DatGateway extends DatLibrarian {
 
         // redirect to subdomain
         if (!isRedirecting && this.redirect) {
-          return this.resolveName(address).then((resolvedAddress) => {
+          return DatLibrarian.resolve(address).then((resolvedAddress) => {
             // TODO: Detect DatDNS addresses
             let encodedAddress = hexTo32.encode(resolvedAddress)
             let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search || ''}`
@@ -176,7 +176,7 @@ class DatGateway extends DatLibrarian {
 
         // Return a Dat DNS entry without fetching it from the archive
         if (path === '.well-known/dat') {
-          return this.resolveName(address).then((resolvedAddress) => {
+          return DatLibrarian.resolve(address).then((resolvedAddress) => {
             log('Resolving address %s to %s', address, resolvedAddress)
 
             res.writeHead(200)
@@ -185,7 +185,7 @@ class DatGateway extends DatLibrarian {
         }
 
         // return the archive
-        return this.add(address).then((dat) => {
+        return this.addIfNew(address).then((dat) => {
           // handle it!!
           const end = Date.now()
           log('[%s] %s %s | OK [%i ms]', address, req.method, path, end - start)
@@ -206,9 +206,14 @@ class DatGateway extends DatLibrarian {
     })
   }
 
-  resolveName (address) {
-    if (address.length === 64) return Promise.resolve(address)
-    return this.add(address).then((dat) => dat.archive.key.toString('hex'))
+  addIfNew (address) {
+    return DatLibrarian.resolve(address).then((key) => {
+      if (this.keys.indexOf(key) === -1) {
+        return this.add(address)
+      } else {
+        return this.get(key)
+      }
+    })
   }
 
   add () {
