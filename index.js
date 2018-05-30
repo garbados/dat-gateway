@@ -124,9 +124,15 @@ class DatGateway extends DatLibrarian {
       } else {
         return this.addIfNew(address).then((dat) => {
           const archive = dat.archive
-          stream.pipe(archive.replicate({
+          const replication = archive.replicate({
             live: true
-          })).pipe(stream)
+          })
+
+          // Relay error events
+          replication.on('error', function (e) {
+            stream.emit('error', e)
+          })
+          stream.pipe(replication).pipe(stream)
         }).catch((e) => {
           stream.end(e.message)
         })
