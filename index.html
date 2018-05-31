@@ -4,8 +4,44 @@
   <title>dat-gateway</title>
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/bulma@0.6.2/css/bulma.css">
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.css">
+  <script>
+    function handleLoaded() {
+      registerProtocol();
+      autoNavigate();
+    }
+
+    function registerProtocol() {
+      try {
+        navigator.registerProtocolHandler(
+          "dat",
+          location.href + "?url=%s",
+          "Dat Gateway Redirection"
+        )
+      } catch(e) {
+        console.error("Couldn't register protocol handler");
+        console.error(e);
+      }
+    }
+
+    function autoNavigate() {
+       // Attempt to load the Dat URL from the querystring
+      var parsedURL = new URL(window.location.href)
+      var toNavigate = parsedURL.searchParams.get("url")
+      if (toNavigate) {
+        document.querySelector("input").value = toNavigate;
+        navigateUrl();
+      }
+    }
+
+    function navigateUrl() {
+      var url = document.querySelector("input").value;
+      var cleaned = url.replace(/^dat:\/\//, "");
+      window.location.href = "/" + cleaned;
+      return false;
+    }
+  </script>
 </head>
-<body>
+<body onload="return handleLoaded()">
   <section class="section">
     <div class="container box" style="max-width:480px">
       <h1 class="title">dat-gateway</h1>
@@ -30,13 +66,5 @@
       </div>
     </div>
   </section>
-  <script>
-    function navigateUrl() {
-      var url = document.querySelector("input").value;
-      var cleaned = url.replace(/^dat:\/\//, "");
-      window.location.href = "/" + cleaned;
-      return false;
-    }
-  </script>
 </body>
 </html>
