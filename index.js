@@ -111,32 +111,20 @@ class DatGateway extends DatLibrarian {
         stream.end('Must provide archive key')
         return Promise.resolve()
       }
-      if (address === 'peers') {
-        Object.keys(this.dats).forEach((key) => {
-          let dat = this.dats[key]
-          let connections = dat.network.connections.length
-          try {
-            stream.write(key + ':' + connections)
-          } catch (e) {
-            console.log('Error with websocket: ' + e)
-          }
+      return this.addIfNew(address).then((dat) => {
+        const archive = dat.archive
+        const replication = archive.replicate({
+          live: true
         })
-      } else {
-        return this.addIfNew(address).then((dat) => {
-          const archive = dat.archive
-          const replication = archive.replicate({
-            live: true
-          })
 
-          // Relay error events
-          replication.on('error', function (e) {
-            stream.emit('error', e)
-          })
-          stream.pipe(replication).pipe(stream)
-        }).catch((e) => {
-          stream.end(e.message)
+        // Relay error events
+        replication.on('error', function (e) {
+          stream.emit('error', e)
         })
-      }
+        stream.pipe(replication).pipe(stream)
+      }).catch((e) => {
+        stream.end(e.message)
+      })
     }
   }
 

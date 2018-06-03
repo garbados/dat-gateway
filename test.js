@@ -7,8 +7,6 @@ const rimraf = require('rimraf')
 const hyperdrive = require('hyperdrive')
 const ram = require('random-access-memory')
 const websocket = require('websocket-stream')
-const axios = require('axios')
-const delay = require('delay')
 
 const dir = 'fixtures'
 const ttl = 4000
@@ -103,39 +101,5 @@ describe('dat-gateway', function () {
       console.error(e.message)
       throw e
     })
-  })
-
-  it('should open a websocket to /peers', function () {
-    const peers = `ws://localhost:5917/peers`
-    let socket = null
-    // first populate repo with a dat.
-    return axios.get('http://localhost:5917/bunsen.hashbase.io/')
-      .then(delay(4000))
-      .then(res => {
-        socket = websocket(peers)
-        return new Promise((resolve, reject) => {
-          socket.once('data', function (rawMsg) {
-            var str = String.fromCharCode.apply(null, rawMsg)
-            let msgArray = str.split(':')
-            let count = msgArray[msgArray.length - 1]
-            try {
-              assert.ok(count > 0, 'count must be non-zero')
-            } catch (e) {
-              reject(e)
-            }
-            resolve(rawMsg)
-          })
-        }).then((content) => {
-          socket.end()
-        }, (e) => {
-          socket.end()
-          console.error(e.message)
-          throw e
-        })
-      }, (e) => {
-        socket.end()
-        console.error(e.message)
-        throw e
-      })
   })
 })
