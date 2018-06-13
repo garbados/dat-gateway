@@ -165,6 +165,9 @@ class DatGateway extends DatLibrarian {
             res.setHeader('Location', redirectURL)
             res.writeHead(302)
             res.end()
+          }).catch((e) => {
+            res.writeHead(500)
+            res.end(JSON.stringify(e))
           })
         }
 
@@ -175,6 +178,9 @@ class DatGateway extends DatLibrarian {
 
             res.writeHead(200)
             res.end(`dat://${resolvedAddress}\nttl=3600`)
+          }).catch((e) => {
+            res.writeHead(500)
+            res.end(JSON.stringify(e))
           })
         }
 
