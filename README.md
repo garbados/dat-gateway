@@ -20,9 +20,9 @@ npm i -g dat-gateway
 
 ## Public Gateways:
 
-- http://gateway.mauve.moe:3000/
-- https://pamphlets.me/
-- https://dat.bovid.space/ (Original gateway before the fork)
+- http://gateway.mauve.moe:3000/ (Hosted by @RangerMauve)
+- https://pamphlets.me/ (Hosted by @brechtcs)
+- https://dat.bovid.space/ (Original gateway from @garbados)
 
 ## Usage
 
