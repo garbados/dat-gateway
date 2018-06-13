@@ -18,6 +18,12 @@ To get the `dat-gateway` command for running your own gateway, use [npm](https:/
 npm i -g dat-gateway
 ```
 
+## Public Gateways:
+
+- http://gateway.mauve.moe:3000/
+- https://pamphlets.me/
+- https://dat.bovid.space/ (Original gateway before the fork)
+
 ## Usage
 
 You can run `dat-gateway` to start a gateway server that listens on port 3000. You can also configure it! You can print usage information with `dat-gateway -h`:
