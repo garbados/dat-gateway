@@ -159,7 +159,7 @@ class DatGateway extends DatLibrarian {
           return DatLibrarian.resolve(address).then((resolvedAddress) => {
             // TODO: Detect DatDNS addresses
             let encodedAddress = hexTo32.encode(resolvedAddress)
-            let redirectURL = `http://${encodedAddress}.${urlParts.hostname}:${this.server.address().port}/${path}${urlParts.search || ''}`
+            let redirectURL = `http://${encodedAddress}.${urlParts.host}/${path}${urlParts.search || ''}`
 
             log('Redirecting %s to %s', address, redirectURL)
             res.setHeader('Location', redirectURL)
