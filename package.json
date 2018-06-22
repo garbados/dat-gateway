@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "dat-librarian": "^1.1.2-alpha",
-    "hex-to-32": "^1.0.0",
+    "hex-to-32": "^2.0.0",
     "hyperdrive-http": "^4.2.2",
     "websocket-stream": "^5.1.2",
     "yargs": "^11.0.0"
