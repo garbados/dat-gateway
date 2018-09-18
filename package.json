@@ -5,7 +5,7 @@
   "main": "index.js",
   "bin": "bin.js",
   "scripts": {
-    "start": "node bin.js",
+    "start": "./bin.js",
     "test": "standard && dependency-check . --unused --no-dev && mocha"
   },
   "dependencies": {
