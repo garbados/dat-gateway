@@ -14,6 +14,11 @@ require('yargs')
     aliases: ['start'],
     builder: function (yargs) {
       yargs.options({
+        host: {
+          alias: 'l',
+          description: 'Host or ip for the gateway to listen on.',
+          default: '0.0.0.0'
+        },
         port: {
           alias: 'p',
           description: 'Port for the gateway to listen on.',
@@ -59,7 +64,7 @@ require('yargs')
           return gateway.listen(port)
         })
         .then(function () {
-          console.log('[dat-gateway] Now listening on port ' + port)
+          console.log('[dat-gateway] Now listening on ' + host + ':' + port)
         })
         .catch(console.error)
     }
