@@ -5,6 +5,7 @@ const fs = require('fs')
 const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const path = require('path')
+const Websocket = require('websocket-stream')
 
 function log () {
   let msg = arguments[0]
@@ -18,7 +19,9 @@ module.exports =
 class DatGateway extends DatLibrarian {
   constructor ({ dir, dat, max, net, period, ttl }) {
     dat = dat || {}
-    dat.temp = dat.temp || true // store dats in memory only
+    if (typeof dat.temp === 'undefined') {
+      dat.temp = dat.temp || true // store dats in memory only
+    }
     log('Creating new gateway with options: %j', { dir, dat, max, net, period, ttl })
     super({ dir, dat, net })
     this.max = max
@@ -49,6 +52,11 @@ class DatGateway extends DatLibrarian {
     return this.getHandler().then((handler) => {
       log('Setting up server...')
       this.server = http.createServer(handler)
+      const websocketHandler = this.getWebsocketHandler()
+      this.websocketServer = Websocket.createServer({
+        perMessageDeflate: false,
+        server: this.server
+      }, websocketHandler)
     }).then(() => {
       log('Loading pre-existing archives...')
       // load pre-existing archives
@@ -90,9 +98,41 @@ class DatGateway extends DatLibrarian {
     })
   }
 
+  getWebsocketHandler () {
+    return (stream, req) => {
+      const urlParts = req.url.split('/')
+      const address = urlParts[1]
+      if (!address) {
+        stream.end('Must provide archive key')
+        return Promise.resolve()
+      }
+      if (address === 'peers') {
+        Object.keys(this.dats).forEach((key) => {
+          let dat = this.dats[key]
+          let connections = dat.network.connections.length
+          try {
+            stream.write(key + ':' + connections)
+          } catch (e) {
+            console.log('Error with websocket: ' + e)
+          }
+        })
+      } else {
+        return this.add(address).then((dat) => {
+          const archive = dat.archive
+          stream.pipe(archive.replicate({
+            live: true
+          })).pipe(stream)
+        }).catch((e) => {
+          stream.end(e.message)
+        })
+      }
+    }
+  }
+
   getHandler () {
     return this.getIndexHtml().then((welcome) => {
       return (req, res) => {
+        res.setHeader('Access-Control-Allow-Origin', '*')
         const start = Date.now()
         // TODO redirect /:key to /:key/
         let urlParts = req.url.split('/')
