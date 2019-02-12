@@ -55,7 +55,7 @@ require('yargs')
       })
     },
     handler: function (argv) {
-      const { dir, max, period, port, ttl, redirect } = argv
+      const { dir, host, max, period, port, ttl, redirect } = argv
       mkdirp.sync(dir) // make sure it exists
       const gateway = new DatGateway({ dir, max, period, ttl, redirect })
       gateway
