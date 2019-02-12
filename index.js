@@ -141,7 +141,7 @@ class DatGateway extends DatLibrarian {
         let requestURL = `http://${req.headers.host}${req.url}`
         let urlParts = url.parse(requestURL)
         let pathParts = urlParts.pathname.split('/').slice(1)
-        if (pathParts.length === 1) {
+        if (pathParts.length === 1 && !!pathParts[0]) {
           // redirect
           res.writeHead(302, {
             'Access-Control-Allow-Origin': '*',
