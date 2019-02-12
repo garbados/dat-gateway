@@ -136,12 +136,21 @@ class DatGateway extends DatLibrarian {
   getHandler () {
     return this.getIndexHtml().then((welcome) => {
       return (req, res) => {
-        res.setHeader('Access-Control-Allow-Origin', '*')
         const start = Date.now()
         // TODO redirect /:key to /:key/
         let requestURL = `http://${req.headers.host}${req.url}`
         let urlParts = url.parse(requestURL)
         let pathParts = urlParts.pathname.split('/').slice(1)
+        if (pathParts.length === 1) {
+          // redirect
+          res.writeHead(302, {
+            'Access-Control-Allow-Origin': '*',
+            'Location': `${req.url}/`
+          })
+          return res.end()
+        } else {
+          res.setHeader('Access-Control-Allow-Origin', '*')
+        }
         let hostnameParts = urlParts.hostname.split('.')
 
         let subdomain = hostnameParts[0]
