@@ -47,10 +47,22 @@ describe('dat-gateway', function () {
 
   it('should handle requests for dead addresses', function () {
     return new Promise((resolve) => {
-      http.get('http://localhost:5917/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642', resolve)
+      http.get('http://localhost:5917/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642/', resolve)
     }).then((res) => {
       // show blank index
       assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should redirect requests without a trailing slash', function () {
+    return new Promise((resolve) => {
+      http.get('http://localhost:5917/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642', resolve)
+    }).then((res) => {
+      // show blank index
+      assert.equal(res.statusCode, 302)
     }).catch((e) => {
       console.error(e)
       throw e
