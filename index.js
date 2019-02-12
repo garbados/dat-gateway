@@ -22,6 +22,7 @@ class DatGateway extends DatLibrarian {
     if (typeof dat.temp === 'undefined') {
       dat.temp = dat.temp || true // store dats in memory only
     }
+    log('Creating new gateway with options: %j', { dir, dat, max, net, period, ttl })
     super({ dir, dat, net })
     this.max = max
     this.ttl = ttl
@@ -33,7 +34,9 @@ class DatGateway extends DatLibrarian {
         const tasks = Object.keys(this.dats).filter((key) => {
           const now = Date.now()
           let lastRead = this.lru[key]
-          return (lastRead && ((now - lastRead) > this.ttl))
+          const isExpired = (lastRead && ((now - lastRead) > this.ttl))
+          log('Archive %s expired? %s', key, isExpired)
+          return isExpired
         }).map((key) => {
           log('Deleting expired archive %s', key)
           delete this.lru[key]
