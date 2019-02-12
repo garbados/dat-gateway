@@ -6,6 +6,12 @@ const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const path = require('path')
 const Websocket = require('websocket-stream')
+const url = require('url')
+const hexTo32 = require('hex-to-32')
+
+const BASE_32_KEY_LENGTH = 52
+const ERR_404 = 'Not found'
+const ERR_500 = 'Server error'
 
 function log () {
   let msg = arguments[0]
@@ -17,13 +23,14 @@ function log () {
 
 module.exports =
 class DatGateway extends DatLibrarian {
-  constructor ({ dir, dat, max, net, period, ttl }) {
+  constructor ({ dir, dat, max, net, period, ttl, redirect }) {
     dat = dat || {}
     if (typeof dat.temp === 'undefined') {
       dat.temp = dat.temp || true // store dats in memory only
     }
     log('Creating new gateway with options: %j', { dir, dat, max, net, period, ttl })
     super({ dir, dat, net })
+    this.redirect = redirect
     this.max = max
     this.ttl = ttl
     this.period = period
@@ -69,9 +76,9 @@ class DatGateway extends DatLibrarian {
    * @param  {Number} port Port to listen on.
    * @return {Promise}     Promise that resolves once the server has started listening.
    */
-  listen (port) {
+  listen (port, host) {
     return new Promise((resolve, reject) => {
-      this.server.listen(port, (err) => {
+      this.server.listen(port, host, (err) => {
         if (err) return reject(err)
         else return resolve()
       })
@@ -100,32 +107,29 @@ class DatGateway extends DatLibrarian {
 
   getWebsocketHandler () {
     return (stream, req) => {
+      stream.on('error', function (e) {
+        log('getWebsocketHandler has error: ' + e)
+      })
       const urlParts = req.url.split('/')
       const address = urlParts[1]
       if (!address) {
         stream.end('Must provide archive key')
         return Promise.resolve()
       }
-      if (address === 'peers') {
-        Object.keys(this.dats).forEach((key) => {
-          let dat = this.dats[key]
-          let connections = dat.network.connections.length
-          try {
-            stream.write(key + ':' + connections)
-          } catch (e) {
-            console.log('Error with websocket: ' + e)
-          }
+      return this.addIfNew(address).then((dat) => {
+        const archive = dat.archive
+        const replication = archive.replicate({
+          live: true
         })
-      } else {
-        return this.add(address).then((dat) => {
-          const archive = dat.archive
-          stream.pipe(archive.replicate({
-            live: true
-          })).pipe(stream)
-        }).catch((e) => {
-          stream.end(e.message)
+
+        // Relay error events
+        replication.on('error', function (e) {
+          stream.emit('error', e)
         })
-      }
+        stream.pipe(replication).pipe(stream)
+      }).catch((e) => {
+        stream.end(e.message)
+      })
     }
   }
 
@@ -135,18 +139,63 @@ class DatGateway extends DatLibrarian {
         res.setHeader('Access-Control-Allow-Origin', '*')
         const start = Date.now()
         // TODO redirect /:key to /:key/
-        let urlParts = req.url.split('/')
-        let address = urlParts[1]
-        let path = urlParts.slice(2).join('/')
+        let requestURL = `http://${req.headers.host}${req.url}`
+        let urlParts = url.parse(requestURL)
+        let pathParts = urlParts.pathname.split('/').slice(1)
+        let hostnameParts = urlParts.hostname.split('.')
+
+        let subdomain = hostnameParts[0]
+        let isRedirecting = this.redirect && (subdomain.length === BASE_32_KEY_LENGTH)
+
+        let address = isRedirecting ? hexTo32.decode(subdomain) : pathParts[0]
+        let path = (isRedirecting ? pathParts : pathParts.slice(1)).join('/')
+
+        const logError = (err, end) => log('[%s] %s %s | ERROR %s [%i ms]', address, req.method, path, err.message, end - start)
         log('[%s] %s %s', address, req.method, path)
+
         // return index
-        if (!address && !path) {
+        if (!isRedirecting && !address) {
           res.writeHead(200)
           res.end(welcome)
           return Promise.resolve()
         }
+
+        // redirect to subdomain
+        if (!isRedirecting && this.redirect) {
+          return DatLibrarian.resolve(address).then((resolvedAddress) => {
+            // TODO: Detect DatDNS addresses
+            let encodedAddress = hexTo32.encode(resolvedAddress)
+            let redirectURL = `http://${encodedAddress}.${urlParts.host}/${path}${urlParts.search || ''}`
+
+            log('Redirecting %s to %s', address, redirectURL)
+            res.setHeader('Location', redirectURL)
+            res.writeHead(302)
+            res.end()
+          }).catch((e) => {
+            const end = Date.now()
+            logError(e, end)
+            res.writeHead(500)
+            res.end(ERR_500)
+          })
+        }
+
+        // Return a Dat DNS entry without fetching it from the archive
+        if (path === '.well-known/dat') {
+          return DatLibrarian.resolve(address).then((resolvedAddress) => {
+            log('Resolving address %s to %s', address, resolvedAddress)
+
+            res.writeHead(200)
+            res.end(`dat://${resolvedAddress}\nttl=3600`)
+          }).catch((e) => {
+            const end = Date.now()
+            logError(e, end)
+            res.writeHead(500)
+            res.end(ERR_500)
+          })
+        }
+
         // return the archive
-        return this.add(address).then((dat) => {
+        return this.addIfNew(address).then((dat) => {
           // handle it!!
           const end = Date.now()
           log('[%s] %s %s | OK [%i ms]', address, req.method, path, end - start)
@@ -154,23 +203,42 @@ class DatGateway extends DatLibrarian {
           dat.onrequest(req, res)
         }).catch((e) => {
           const end = Date.now()
-          log('[%s] %s %s | ERROR %s [%i ms]', address, req.method, path, e.message, end - start)
+          logError(e, end)
           if (e.message.indexOf('not found') > -1) {
             res.writeHead(404)
-            res.end('Not found')
+            res.end(ERR_404)
           } else {
             res.writeHead(500)
-            res.end(JSON.stringify(e))
+            res.end(ERR_500)
           }
         })
       }
     })
   }
 
+  addIfNew (address) {
+    return DatLibrarian.resolve(address).then((key) => {
+      if (this.keys.indexOf(key) === -1) {
+        return this.add(address)
+      } else {
+        this.lru[key] = Date.now()
+        return this.get(key)
+      }
+    })
+  }
+
+  clearOldest () {
+    const sortOldestFirst = Object.keys(this.lru).sort((a, b) => {
+      return this.lru[a] - this.lru[b]
+    })
+    const oldest = sortOldestFirst[0]
+    return this.remove(oldest)
+  }
+
   add () {
     if (this.keys.length >= this.max) {
-      const error = new Error('Cache is full. Cannot add more archives.')
-      return Promise.reject(error)
+      // Delete the oldest item when we reach capacity and try again
+      return this.clearOldest().then(() => this.add.apply(this, arguments))
     }
     return super.add.apply(this, arguments).then((dat) => {
       log('Adding HTTP handler to archive...')

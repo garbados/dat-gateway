@@ -5,8 +5,8 @@ const http = require('http')
 const DatGateway = require('.')
 const rimraf = require('rimraf')
 const hyperdrive = require('hyperdrive')
-const websocket = require('websocket-stream')
 const ram = require('random-access-memory')
+const websocket = require('websocket-stream')
 
 const dir = 'fixtures'
 const ttl = 4000
@@ -16,7 +16,7 @@ describe('dat-gateway', function () {
   this.timeout(0)
 
   before(function () {
-    this.gateway = new DatGateway({ dir, ttl, period })
+    this.gateway = new DatGateway({dir, ttl, period})
     return this.gateway.load().then(() => {
       return this.gateway.listen(5917)
     })

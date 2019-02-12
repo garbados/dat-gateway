@@ -2,10 +2,45 @@
 <html style="background-color: #eee">
 <head>
   <title>dat-gateway</title>
-  <link rel="stylesheet" type="text/css" href="https://unpkg.com/bulma@0.6.2/css/bulma.css">
+  <link rel="stylesheet" type="text/css" href="https://unpkg.com/bulma@0.7.4/css/bulma.css">
   <link rel="stylesheet" type="text/css" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.css">
+  <script>
+    function handleLoaded() {
+      registerProtocol();
+      autoNavigate();
+    }
+
+    function registerProtocol() {
+      try {
+        navigator.registerProtocolHandler(
+          "dat",
+          location.href + "?url=%s",
+          "Dat Gateway Redirection"
+        )
+      } catch(e) {
+        console.error("Couldn't register protocol handler");
+        console.error(e);
+      }
+    }
+
+    function autoNavigate() {
+       // Attempt to load the Dat URL from the querystring
+      var parsedURL = new URL(window.location.href)
+      var toNavigate = parsedURL.searchParams.get("url")
+      if (toNavigate) {
+        document.querySelector("input").value = toNavigate;
+      }
+    }
+
+    function navigateUrl() {
+      var url = document.querySelector("input").value;
+      var cleaned = url.replace(/^dat:\/\//, "");
+      window.location.href = "/" + cleaned;
+      return false;
+    }
+  </script>
 </head>
-<body>
+<body onload="return handleLoaded()">
   <section class="section">
     <div class="container box" style="max-width:480px">
       <h1 class="title">dat-gateway</h1>
@@ -13,17 +48,24 @@
       <div class="content">
         <p>You can use this gateway to visit content hosted over the p2p <a href="https://datproject.org/">Dat</a> protocol.</p>
         <p>So why not visit something?</p>
-        <p>Enter Dat keys in the URL like this: <code>/:key/:path</code></p>
-        <p>Example: <a href="/garbados.hashbase.io/icons/favicon.ico"><code>/garbados.hashbase.io/icons/favicon.ico</code></a></p>
-        <p>Well, there it is right now!</p>
-        <figure class="image is-64x64">
-          <img alt="a cow" src="/garbados.hashbase.io/icons/favicon.ico">
-        </figure>
-        <p>You can also use Dat software to share things of your own by <a href="https://docs.datproject.org/install">installing Dat</a> and sharing archives.</p>
-        <p>Happy sharing, nerds!</p>
-        <p>- <a href="https://toot.cat/@garbados">D Dino</a></p>
-        <hr>
-        <p>PS: Gateways are important to the health of the decentralized web! If you'd like to run your own gateway, please check out <a href="https://github.com/garbados/dat-gateway">the source.</a></p>
+        <p>Enter Dat keys in the URL like this: <code>/:key/:path</code> or use the form below.</p>
+        <p>
+          <form onsubmit="return navigateUrl()">
+            <div class="field has-addons">
+              <div class="control is-expanded">
+                <input class="input" placeholder="dat://">            
+              </div>
+              <div class="control">
+                <button class="button is-info">Go!</button>
+              </div>
+            </div>
+          </form>
+        </p>
+        <p>
+          <small>
+            View <a href="https://github.com/garbados/dat-gateway">the source</a>.
+          </small>
+        </p>
       </div>
     </div>
   </section>
