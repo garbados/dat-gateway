@@ -12,10 +12,16 @@ If you want a browser that can visit Dat archives, check out [Beaker](https://be
 
 ## Install
 
-To get the `dat-gateway` command for running your own gateway, use [npm](https://www.npmjs.com/):
+To get the `dat-gateway` command for running your own gateway, use [`npm`](https://www.npmjs.com/):
 
 ```
 npm i -g dat-gateway
+```
+
+If you have [`npx`](https://github.com/zkat/npx) installed, it's even shorter:
+
+```
+npx dat-gateway
 ```
 
 ## Public Gateways:
