@@ -7,6 +7,12 @@ const rimraf = require('rimraf')
 const hyperdrive = require('hyperdrive')
 const ram = require('random-access-memory')
 const websocket = require('websocket-stream')
+const hexTo32 = require('hex-to-32')
+
+const testGateway = 'dat.localhost:5917'
+const testDnsKey = 'garbados.hashbase.io'
+const testKey = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
+const testEncKey = hexTo32.encode(testKey)
 
 const dir = 'fixtures'
 const ttl = 4000
@@ -16,7 +22,7 @@ describe('dat-gateway', function () {
   this.timeout(0)
 
   before(function () {
-    this.gateway = new DatGateway({dir, ttl, period})
+    this.gateway = new DatGateway({ dir, ttl, period })
     return this.gateway.load().then(() => {
       return this.gateway.listen(5917)
     })
@@ -28,16 +34,15 @@ describe('dat-gateway', function () {
     })
   })
 
-  it('should exist', function () {
+  it('cache directory should exist', function () {
     assert.equal(this.gateway.dir, dir)
   })
 
-  it('should handle requests', function () {
+  it('index portal should exist', function () {
     return new Promise((resolve) => {
-      const req = http.get('http://localhost:5917/garbados.hashbase.io/icons/favicon.ico', resolve)
+      const req = http.get(`http://${testGateway}/`, resolve)
       req.on('error', console.log)
     }).then((res) => {
-      // should display empty index, s.t. an attacker cannot determine
       assert.equal(res.statusCode, 200)
     }).catch((e) => {
       console.error(e)
@@ -45,24 +50,141 @@ describe('dat-gateway', function () {
     })
   })
 
-  it('should handle requests for dead addresses', function () {
+  it('should redirect index portal listening on loopback to normalized index portal host', function () {
     return new Promise((resolve) => {
-      http.get('http://localhost:5917/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642/', resolve)
+      const req = http.get(`http://127.0.0.1:5917/`, resolve)
+      req.on('error', console.log)
     }).then((res) => {
-      // show blank index
-      assert.equal(res.statusCode, 200)
-    }).catch((e) => {
-      console.error(e)
-      throw e
-    })
-  })
-
-  it('should redirect requests without a trailing slash', function () {
-    return new Promise((resolve) => {
-      http.get('http://localhost:5917/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642', resolve)
-    }).then((res) => {
-      // show blank index
       assert.equal(res.statusCode, 302)
+      assert.equal(res.headers.location, `http://${testGateway}/`)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for :gateway/:dns_key/:path', function () {
+    return new Promise((resolve) => {
+      const req = http.get(`http://${testGateway}/${testDnsKey}/icons/favicon.ico`, resolve)
+      req.on('error', console.log)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for :gateway/:key/:path', function () {
+    return new Promise((resolve) => {
+      const req = http.get(`http://${testGateway}/${testKey}/icons/favicon.ico`, resolve)
+      req.on('error', console.log)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for :dns_key.:gateway/:path', function () {
+    return new Promise((resolve) => {
+      const req = http.get(`http://${testDnsKey}.${testGateway}/icons/favicon.ico`, resolve)
+      req.on('error', console.log)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for :b32_key.:gateway/:path', function () {
+    return new Promise((resolve) => {
+      const req = http.get(`http://${testEncKey}.${testGateway}/icons/favicon.ico`, resolve)
+      req.on('error', console.log)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should redirect requests for :gateway/:dns_key to :gateway/:dns_key/', function () {
+    return new Promise((resolve) => {
+      http.get(`http://${testGateway}/${testDnsKey}`, resolve)
+    }).then((res) => {
+      assert.equal(res.statusCode, 302)
+      assert.equal(res.headers.location, `/${testDnsKey}/`)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should redirect requests for :gateway/:key to :gateway/:key/', function () {
+    return new Promise((resolve) => {
+      http.get(`http://${testGateway}/${testKey}`, resolve)
+    }).then((res) => {
+      assert.equal(res.statusCode, 302)
+      assert.equal(res.headers.location, `/${testKey}/`)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should not redirect loop requests for :gateway/:key/', function () {
+    return new Promise((resolve) => {
+      http.get(`http://${testGateway}/${testKey}/`, resolve)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should not redirect requests for :dns_key.:gateway/:path to :dns_key.:gateway/:path/', function () {
+    return new Promise((resolve) => {
+      const req = http.get(`http://${testDnsKey}.${testGateway}/index.html`, resolve)
+      req.on('error', console.log)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for :gateway/:invalid_key/', function () {
+    return new Promise((resolve) => {
+      http.get(`http://${testGateway}/whoop-whoop-test/`, resolve)
+    }).then((res) => {
+      assert.equal(res.statusCode, 404)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for :invalid_key.:gateway/', function () {
+    return new Promise((resolve) => {
+      http.get(`http://whoop-whoop-test.${testGateway}/`, resolve)
+    }).then((res) => {
+      assert.equal(res.statusCode, 500)
+    }).catch((e) => {
+      console.error(e)
+      throw e
+    })
+  })
+
+  it('should handle requests for gateway/:dead_key/', function () {
+    return new Promise((resolve) => {
+      http.get(`http://${testGateway}/af75142d92dd1e456cf2a7e58a37f891fe42a1e49ce2a5a7859de938e38f4642/`, resolve)
+    }).then((res) => {
+      assert.equal(res.statusCode, 200)
     }).catch((e) => {
       console.error(e)
       throw e
@@ -82,15 +204,12 @@ describe('dat-gateway', function () {
   })
 
   it('should handle websockets for replication', function () {
-    // Key for gardos.hashbase.io
-    const key = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
-
-    const url = `ws://localhost:5917/${key}`
+    const url = `ws://${testGateway}/${testKey}`
 
     let socket = null
 
     return new Promise((resolve, reject) => {
-      const archive = hyperdrive(ram, Buffer.from(key, 'hex'))
+      const archive = hyperdrive(ram, Buffer.from(testKey, 'hex'))
       archive.once('error', reject)
       archive.once('ready', () => {
         socket = websocket(url)
