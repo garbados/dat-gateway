@@ -178,7 +178,7 @@ class DatGateway extends DatLibrarian {
           datKey = pathParts[0]
         }
 
-        let isRedirected  = Boolean(subdomain && datKey)
+        let isRedirected = Boolean(subdomain && datKey)
         let isRedirecting = Boolean(this.redirect && !subdomain && datKey)
 
         let path = '/'
