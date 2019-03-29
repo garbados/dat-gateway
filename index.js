@@ -174,30 +174,31 @@ class DatGateway extends DatLibrarian {
           } else if (subdomain.length === BASE_32_KEY_LENGTH) {
             datKey = hexTo32.decode(subdomain)
           }
-        } else if (!this.redirect && pathParts.length >= 1) {
+        } else if (pathParts.length >= 1) {
           datKey = pathParts[0]
         }
 
-        let isRedirecting = this.redirect && !subdomain && datKey
+        let isRedirected  = Boolean(subdomain && datKey)
+        let isRedirecting = Boolean(this.redirect && !subdomain && datKey)
 
         let path = '/'
         if (pathParts) {
-          if (subdomain && !isRedirecting) {
+          if (subdomain && isRedirected) {
             path = pathParts.join('/')
-          } else if (!subdomain && !isRedirecting && pathParts.length >= 2) {
+          } else if ((isRedirected || isRedirecting) && pathParts.length >= 2) {
             path = pathParts.slice(1).join('/')
           }
         }
 
         // return index
-        if (path === '/' && !datKey) {
+        if (path === '/' && !datKey && !isRedirected && !isRedirecting) {
           res.writeHead(200)
           res.end(welcome)
           return Promise.resolve()
         }
 
         // redirect /:key to /:key/
-        if (!isRedirecting && !subdomain && pathParts.length === 1 && !pathParts[0].endsWith('/') && pathParts[0] !== 'favicon.ico') {
+        if (!isRedirected && pathParts.length === 1 && !pathParts[0].endsWith('/') && pathParts[0] !== 'favicon.ico') {
           res.writeHead(302, {
             'Access-Control-Allow-Origin': '*',
             'Location': `${req.url}/`
@@ -211,10 +212,10 @@ class DatGateway extends DatLibrarian {
         log('[%s] %s %s', datKey, req.method, path)
 
         // redirect to subdomain
-        if (this.redirect && !subdomain && datKey) {
-          return DatLibrarian.resolve(datKey).then((resolvedAddress) => {
-            let encodedDatKey = datKey.contains('.') ? datKey : hexTo32.encode(datKey)
-            let redirectURL = `http://${encodedDatKey}.${hostname}/${path}${urlParts.search || ''}`
+        if (isRedirecting) {
+          return DatLibrarian.resolve(datKey).then((resolvedKey) => {
+            let encodedDatKey = datKey.includes('.') ? datKey : hexTo32.encode(resolvedKey)
+            let redirectURL = `http://${encodedDatKey}.${hostname}:${urlParts.port}/${path}${urlParts.search || ''}`
 
             log('Redirecting %s to %s', datKey, redirectURL)
             res.setHeader('Location', redirectURL)
