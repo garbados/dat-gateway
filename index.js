@@ -25,7 +25,9 @@ module.exports =
 class DatGateway extends DatLibrarian {
   constructor ({ dir, dat, max, net, period, ttl, redirect }) {
     dat = dat || {}
-    dat.sparse = true // only download files requested by the user
+    if (typeof dat.sparse === 'undefined') {
+      dat.sparse = dat.sparse || true // only download files requested by the user
+    }
     if (typeof dat.temp === 'undefined') {
       dat.temp = dat.temp || true // store dats in memory only
     }
