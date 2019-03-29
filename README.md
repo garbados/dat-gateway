@@ -44,7 +44,7 @@ Options:
   --host, -l      Host or ip for the gateway to listen on.  [default: "0.0.0.0"]
   --port, -p      Port for the gateway to listen on.             [default: 3000]
   --dir, -d       Directory to use as a cache.
-                                            [string] [default: "~/.dat-gateway"]
+                                      [string] [default: "~/.cache/dat-gateway"]
   --max, -m       Maximum number of archives allowed in the cache. [default: 20]
   --period        Number of milliseconds between cleaning the cache of expired
                   archives.                                     [default: 60000]
