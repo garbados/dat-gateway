@@ -208,7 +208,8 @@ class DatGateway extends DatLibrarian {
           // handle it!!
           const end = Date.now()
           log('[%s] %s %s | OK [%i ms]', address, req.method, path, end - start)
-          req.url = `/${path}`
+          var query = req.url.split('?')[1] || ''
+          req.url = `/${path}?${query}`
           dat.onrequest(req, res)
         }).catch((e) => {
           const end = Date.now()
