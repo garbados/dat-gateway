@@ -29,6 +29,7 @@ npx dat-gateway
 - http://gateway.mauve.moe:3000/ (Hosted by @RangerMauve)
 - https://pamphlets.me/ (Hosted by @brechtcs)
 - https://dat.bovid.space/ (Original gateway from @garbados)
+- https://dat.hypersource.club (Hosted by @jwerle)
 
 ## Usage
 
