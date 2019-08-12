@@ -78,7 +78,7 @@ The gateway will peer archives until they expire from the cache, at which point 
 The gateway also supports replicating a hyperdrive instance using [websockets](https://github.com/maxogden/websocket-stream)
 
 ```javascript
-const Websocket = require('websocket-stream')
+const websocket = require('websocket-stream')
 const hyperdrive = require('hyperdrive')
 
 const key = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
