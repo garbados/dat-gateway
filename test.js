@@ -58,9 +58,6 @@ const concludeNocks = function () {
     fs.writeFileSync(fixturePath, JSON.stringify(nockCallObjects), 'utf8')
     nock.restore()
     nock.recorder.clear()
-  } else if (!nock.isDone()) {
-    console.error(nock.pendingMocks())
-    throw new Error(`${nock.pendingMocks().length} pending mocks`)
   }
 }
 
