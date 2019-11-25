@@ -4,6 +4,8 @@
 
 const DatGateway = require('.')
 const os = require('os')
+const path = require('path')
+const cacheDir = require('xdg-basedir').cache
 const mkdirp = require('mkdirp')
 const pkg = require('./package.json')
 
@@ -30,7 +32,7 @@ require('yargs')
           coerce: function (value) {
             return value.replace('~', os.homedir())
           },
-          default: '~/.dat-gateway',
+          default: path.join(cacheDir, 'dat-gateway'),
           normalize: true
         },
         max: {
