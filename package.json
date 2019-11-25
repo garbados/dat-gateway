@@ -10,10 +10,10 @@
   },
   "dependencies": {
     "dat-librarian": "^1.1.2-alpha",
-    "hyperdrive-http": "^4.3.4",
     "hex-to-32": "^2.0.0",
+    "hyperdrive-http": "^4.3.4",
     "websocket-stream": "^5.1.2",
-    "xdg": "^0.1.1",
+    "xdg-basedir": "^4.0.0",
     "yargs": "^11.0.0"
   },
   "devDependencies": {
