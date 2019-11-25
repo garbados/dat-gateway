@@ -6,3 +6,11 @@ node_js:
 after_success:
 - npm i -g nyc coveralls
 - nyc npm test && nyc report --reporter=text-lcov | coveralls
+addons:
+  hosts:
+    - dat.localhost
+    - whoop-whoop-test.dat.localhost
+    - garbados.hashbase.io.localhost
+    - garbados.hashbase.io.dat.localhost
+    - ym54rv6dfjxjawif57n7ehx6vh7shmandq7otlviacjovotmjflq.localhost
+    - ym54rv6dfjxjawif57n7ehx6vh7shmandq7otlviacjovotmjflq.dat.localhost
