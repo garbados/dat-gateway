@@ -2,19 +2,19 @@
 
 const DatLibrarian = require('dat-librarian')
 const fs = require('fs')
+const hexTo32 = require('hex-to-32')
 const http = require('http')
 const hyperdriveHttp = require('hyperdrive-http')
 const path = require('path')
 const Websocket = require('websocket-stream')
-const url = require('url')
-const hexTo32 = require('hex-to-32')
+const { URL } = require('url')
 
 const BASE_32_KEY_LENGTH = 52
 const ERR_404 = 'Not found'
 const ERR_500 = 'Server error'
 
 function log () {
-  let msg = arguments[0]
+  const msg = arguments[0]
   arguments[0] = '[dat-gateway] ' + msg
   if (process.env.DEBUG || process.env.LOG) {
     console.log.apply(console, arguments)
@@ -40,7 +40,7 @@ class DatGateway extends DatLibrarian {
         log('Checking for expired archives...')
         const tasks = Object.keys(this.dats).filter((key) => {
           const now = Date.now()
-          let lastRead = this.lru[key]
+          const lastRead = this.lru[key]
           const isExpired = (lastRead && ((now - lastRead) > this.ttl))
           log('Archive %s expired? %s', key, isExpired)
           return isExpired
@@ -97,7 +97,7 @@ class DatGateway extends DatLibrarian {
 
   getIndexHtml () {
     return new Promise((resolve, reject) => {
-      let filePath = path.join(__dirname, 'index.html')
+      const filePath = path.join(__dirname, 'index.html')
       fs.readFile(filePath, 'utf-8', (err, html) => {
         if (err) return reject(err)
         else return resolve(html)
@@ -138,26 +138,26 @@ class DatGateway extends DatLibrarian {
       return (req, res) => {
         const start = Date.now()
         // TODO redirect /:key to /:key/
-        let requestURL = `http://${req.headers.host}${req.url}`
-        let urlParts = url.parse(requestURL)
-        let pathParts = urlParts.pathname.split('/').slice(1)
+        const requestURL = `http://${req.headers.host}${req.url}`
+        const urlParts = new URL(requestURL)
+        const pathParts = urlParts.pathname.split('/').slice(1)
         if (pathParts.length === 1 && !!pathParts[0]) {
           // redirect
           res.writeHead(302, {
             'Access-Control-Allow-Origin': '*',
-            'Location': `${req.url}/`
+            Location: `${req.url}/`
           })
           return res.end()
         } else {
           res.setHeader('Access-Control-Allow-Origin', '*')
         }
-        let hostnameParts = urlParts.hostname.split('.')
+        const hostnameParts = urlParts.hostname.split('.')
 
-        let subdomain = hostnameParts[0]
-        let isRedirecting = this.redirect && (subdomain.length === BASE_32_KEY_LENGTH)
+        const subdomain = hostnameParts[0]
+        const isRedirecting = this.redirect && (subdomain.length === BASE_32_KEY_LENGTH)
 
-        let address = isRedirecting ? hexTo32.decode(subdomain) : pathParts[0]
-        let path = (isRedirecting ? pathParts : pathParts.slice(1)).join('/')
+        const address = isRedirecting ? hexTo32.decode(subdomain) : pathParts[0]
+        const path = (isRedirecting ? pathParts : pathParts.slice(1)).join('/')
 
         const logError = (err, end) => log('[%s] %s %s | ERROR %s [%i ms]', address, req.method, path, err.message, end - start)
         log('[%s] %s %s', address, req.method, path)
@@ -173,8 +173,8 @@ class DatGateway extends DatLibrarian {
         if (!isRedirecting && this.redirect) {
           return DatLibrarian.resolve(address).then((resolvedAddress) => {
             // TODO: Detect DatDNS addresses
-            let encodedAddress = hexTo32.encode(resolvedAddress)
-            let redirectURL = `http://${encodedAddress}.${urlParts.host}/${path}${urlParts.search || ''}`
+            const encodedAddress = hexTo32.encode(resolvedAddress)
+            const redirectURL = `http://${encodedAddress}.${urlParts.host}/${path}${urlParts.search || ''}`
 
             log('Redirecting %s to %s', address, redirectURL)
             res.setHeader('Location', redirectURL)
