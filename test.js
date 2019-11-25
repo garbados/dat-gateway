@@ -15,6 +15,7 @@ const DatGateway = require('.')
 
 const NOCK_DIR = '.nock'
 const RECORD_TESTS = !!process.env.RECORD_TESTS
+const SKIP_WEBSOCKETS = !!process.env.SKIP_WEBSOCKETS
 
 const dir = '.NOCK_DIR'
 const ttl = 4000
@@ -139,6 +140,7 @@ describe('dat-gateway', function () {
   })
 
   it('should handle websockets for replication', function () {
+    if (SKIP_WEBSOCKETS) { return } // optionally skip
     // Key for gardos.hashbase.io
     const key = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
 
@@ -165,7 +167,7 @@ describe('dat-gateway', function () {
       })
     }).then((content) => {
       socket.end()
-    }, (e) => {
+    }).catch((e) => {
       socket.end()
       console.error(e.message)
       throw e
