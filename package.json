@@ -13,6 +13,7 @@
     "hyperdrive-http": "^4.4.0",
     "hex-to-32": "^2.0.0",
     "websocket-stream": "^5.5.0",
+    "xdg-basedir": "^4.0.0",
     "yargs": "^15.0.2"
   },
   "devDependencies": {
