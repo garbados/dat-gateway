@@ -1,11 +1,14 @@
-/* global describe it before after */
+/* global describe it before after beforeEach afterEach */
 
 const assert = require('assert')
+const fs = require('fs')
 const http = require('http')
-const DatGateway = require('.')
-const rimraf = require('rimraf')
 const hyperdrive = require('hyperdrive')
+const mkdirp = require('mkdirp')
+const nock = require('nock')
+const path = require('path')
 const ram = require('random-access-memory')
+const rimraf = require('rimraf')
 const websocket = require('websocket-stream')
 const hexTo32 = require('hex-to-32')
 
@@ -14,24 +17,79 @@ const testDnsKey = 'garbados.hashbase.io'
 const testKey = 'c33bc8d7c32a6e905905efdbf21efea9ff23b00d1c3ee9aea80092eaba6c4957'
 const testEncKey = hexTo32.encode(testKey)
 
-const dir = 'fixtures'
+const DatGateway = require('.')
+
+const NOCK_DIR = '.nock'
+const RECORD_TESTS = !!process.env.RECORD_TESTS
+
+const dir = '.NOCK_DIR'
 const ttl = 4000
 const period = 1000
 
-describe('dat-gateway', function () {
-  this.timeout(0)
-
-  before(function () {
-    this.gateway = new DatGateway({ dir, ttl, period })
-    return this.gateway.load().then(() => {
-      return this.gateway.listen(5917)
+const recordOrLoadNocks = function () {
+  const titles = []
+  let test = this.currentTest
+  while (test.parent) {
+    titles.unshift(test.title)
+    if (test.parent) { test = test.parent }
+  }
+  const dir = path.join(NOCK_DIR, ...titles.slice(0, -1))
+  const name = `${titles.slice(-1)[0]}.json`
+  this._currentNock = { titles, dir, name }
+  if (RECORD_TESTS) {
+    nock.recorder.rec({
+      output_objects: true,
+      dont_print: true
     })
+  } else {
+    try {
+      nock.load(path.join(dir, encodeURIComponent(name)))
+    } catch (error) {
+      if (error.code === 'ENOENT') {
+        // no nock
+      } else {
+        throw error
+      }
+    }
+  }
+}
+
+const concludeNocks = function () {
+  if (RECORD_TESTS) {
+    // save http requests for future nocking
+    const { dir, name } = this._currentNock
+    const fixturePath = path.join(dir, encodeURIComponent(name))
+    const nockCallObjects = nock.recorder.play()
+    mkdirp.sync(dir)
+    fs.writeFileSync(fixturePath, JSON.stringify(nockCallObjects), 'utf8')
+    nock.restore()
+    nock.recorder.clear()
+  } else if (!nock.isDone()) {
+    console.error(nock.pendingMocks())
+    throw new Error(`${nock.pendingMocks().length} pending mocks`)
+  }
+}
+
+beforeEach(function () {
+  recordOrLoadNocks.call(this)
+})
+
+afterEach(async function () {
+  concludeNocks.call(this)
+})
+
+describe('dat-gateway', function () {
+  this.timeout(60 * 1000) // 1 minute
+
+  before(async function () {
+    this.gateway = new DatGateway({ dir, ttl, period })
+    await this.gateway.load()
+    return this.gateway.listen(5917)
   })
 
-  after(function () {
-    return this.gateway.close().then(() => {
-      rimraf.sync(dir)
-    })
+  after(async function () {
+    await this.gateway.close()
+    rimraf.sync(dir)
   })
 
   it('cache directory should exist', function () {
@@ -52,7 +110,7 @@ describe('dat-gateway', function () {
 
   it('should redirect index portal listening on loopback to normalized index portal host', function () {
     return new Promise((resolve) => {
-      const req = http.get(`http://127.0.0.1:5917/`, resolve)
+      const req = http.get('http://127.0.0.1:5917/', resolve)
       req.on('error', console.log)
     }).then((res) => {
       assert.strictEqual(res.statusCode, 302)
@@ -213,6 +271,11 @@ describe('dat-gateway --redirect true', function () {
     return this.gateway.load().then(() => {
       return this.gateway.listen(5917)
     })
+  })
+
+  after(async function () {
+    await this.gateway.close()
+    rimraf.sync(dir)
   })
 
   it('should redirect requests for :gateway/:dns_key/:path to :dns_key.:gateway/:path/', function () {
