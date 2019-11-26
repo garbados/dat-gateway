@@ -53,13 +53,18 @@ require('yargs')
           alias: 'r',
           description: 'Whether to use subdomain redirects',
           default: false
+        },
+        loopback: {
+          alias: 'L',
+          description: 'TODO',
+          default: 'dat.localhost'
         }
       })
     },
     handler: function (argv) {
-      const { dir, host, max, period, port, ttl, redirect } = argv
+      const { host, port, dir, ...gatewayOpts } = argv
       mkdirp.sync(dir) // make sure it exists
-      const gateway = new DatGateway({ dir, max, period, ttl, redirect })
+      const gateway = new DatGateway({ dir, ...gatewayOpts })
       gateway
         .load()
         .then(() => {
