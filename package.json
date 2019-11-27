@@ -1,7 +1,7 @@
 {
   "name": "dat-gateway",
   "description": "A Dat-to-HTTP gateway and helper library.",
-  "version": "2.2.0-beta",
+  "version": "2.2.1-beta",
   "main": "index.js",
   "bin": "bin.js",
   "scripts": {
@@ -26,6 +26,7 @@
     "standard": "^14.3.1"
   },
   "files": [
+    "index.html",
     "index.js",
     "bin.js"
   ],
