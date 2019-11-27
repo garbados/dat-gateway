@@ -105,6 +105,18 @@ For example, `http://{host}:{port}/{datkey}/index.html` will be redirected to `h
 
 Please note that due to limitations in how URLs work, the dat key will be converted to it's base32 representation instead of hexadecimal using [this library](https://github.com/RangerMauve/hex-to-32)
 
+## Serving on localhost
+
+Running a gateway locally for personal use is a great idea, but by default dat-gateway uses `dat.localhost` as its hostname when serving to the local machine. Firefox [does not support '\*.localhost' domains](https://bugzilla.mozilla.org/show_bug.cgi?id=1433933) and so this behavior breaks the gateway for Firefox users.
+
+To fix this, use the `-L, --loopback` flag to specify `localhost` as the loopback hostname, like so:
+
+```
+$ dat-gateway -L localhost
+```
+
+This will cause dat-gateway to use `localhost` as its domain name, which Firefox supports just fine.
+
 ## Contributions
 
 All contributions are welcome: bug reports, feature requests, "why doesn't this work" questions, patches for fixes and features, etc. For all of the above, [file an issue](https://github.com/garbados/dat-gateway/issues) or [submit a pull request](https://github.com/garbados/dat-gateway/pulls).

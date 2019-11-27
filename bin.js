@@ -56,7 +56,7 @@ require('yargs')
         },
         loopback: {
           alias: 'L',
-          description: 'TODO',
+          description: 'What hostname to use when serving locally.',
           default: 'dat.localhost'
         }
       })
