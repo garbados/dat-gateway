@@ -10,6 +10,7 @@ const Websocket = require('websocket-stream')
 const { URL } = require('url')
 
 const DAT_LOCALHOST_NAME = 'dat.localhost'
+const IS_LOCALHOST_REGEX = /(localhost|\[?::1\]?|127(\.[0-9]{1,3}){3})$/
 const BASE_32_KEY_LENGTH = 52
 const ERR_404 = 'Not found'
 const ERR_500 = 'Server error'
@@ -24,7 +25,7 @@ function log () {
 
 module.exports =
 class DatGateway extends DatLibrarian {
-  constructor ({ dir, dat, max, net, period, ttl, redirect }) {
+  constructor ({ dir, dat, loopback, max, net, period, ttl, redirect }) {
     dat = dat || {}
     if (typeof dat.sparse === 'undefined') {
       dat.sparse = dat.sparse || true // only download files requested by the user
@@ -34,10 +35,11 @@ class DatGateway extends DatLibrarian {
     }
     log('Creating new gateway with options: %j', { dir, dat, max, net, period, ttl })
     super({ dir, dat, net })
-    this.redirect = redirect
+    this.loopback = loopback || DAT_LOCALHOST_NAME
     this.max = max
-    this.ttl = ttl
     this.period = period
+    this.redirect = redirect
+    this.ttl = ttl
     this.lru = {}
     if (this.ttl && this.period) {
       this.cleaner = setInterval(() => {
@@ -89,17 +91,15 @@ class DatGateway extends DatLibrarian {
     })
   }
 
-  close () {
+  async close () {
     if (this.cleaner) {
       log('Halting cleaner...')
       clearInterval(this.cleaner)
     }
-    return new Promise((resolve) => {
-      if (this.server) this.server.close(resolve)
-      else resolve()
-    }).then(() => {
-      return super.close()
-    })
+    if (this.server) {
+      await new Promise(resolve => this.server.close(resolve))
+    }
+    return super.close()
   }
 
   getIndexHtml () {
@@ -149,11 +149,11 @@ class DatGateway extends DatLibrarian {
         const pathParts = urlParts.pathname.split('/').slice(1)
 
         let hostname = urlParts.hostname
-        const hostIsOnLoopback = RegExp(/(localhost|\[?::1\]?|127(\.[0-9]{1,3}){3})$/).test(hostname)
+        const hostIsOnLoopback = RegExp(IS_LOCALHOST_REGEX).test(hostname)
 
         // normalize loopback interface hostnames
-        if (hostIsOnLoopback && !hostname.endsWith(DAT_LOCALHOST_NAME)) {
-          hostname = hostname.replace(/(localhost|\[?::1\]?|127(\.[0-9]{1,3}){3})$/, DAT_LOCALHOST_NAME)
+        if (hostIsOnLoopback && !hostname.endsWith(this.loopback)) {
+          hostname = hostname.replace(IS_LOCALHOST_REGEX, DAT_LOCALHOST_NAME)
 
           // redirect to normalized hostname
           res.writeHead(302, {

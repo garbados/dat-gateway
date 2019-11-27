@@ -9,7 +9,7 @@
     "test": "standard && dependency-check . --unused --no-dev && mocha"
   },
   "dependencies": {
-    "dat-librarian": "^1.1.6-beta",
+    "dat-librarian": "^1.1.8-beta",
     "hyperdrive-http": "^4.4.0",
     "hex-to-32": "^2.0.0",
     "websocket-stream": "^5.5.0",
@@ -25,6 +25,10 @@
     "rimraf": "^3.0.0",
     "standard": "^14.3.1"
   },
+  "files": [
+    "index.js",
+    "bin.js"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/garbados/dat-gateway.git"
