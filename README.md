@@ -44,6 +44,8 @@ Options:
   --config        Path to JSON config file
   --host, -l      Host or ip for the gateway to listen on.  [default: "0.0.0.0"]
   --port, -p      Port for the gateway to listen on.             [default: 3000]
+  --dat-port, -P  Port for Dat to listen on. Defaults to Dat's internal
+                  defaults.                                      [default: null]
   --dir, -d       Directory to use as a cache.
                                       [string] [default: "~/.cache/dat-gateway"]
   --max, -m       Maximum number of archives allowed in the cache. [default: 20]
@@ -52,6 +54,8 @@ Options:
   --ttl, -t       Number of milliseconds before archives expire.
                                                                [default: 600000]
   --redirect, -r  Whether to use subdomain redirects            [default: false]
+  --loopback, -L  What hostname to use when serving locally.
+                                                      [default: "dat.localhost"]
   -h, --help      Show help                                            [boolean]
 ```
 

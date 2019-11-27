@@ -26,6 +26,11 @@ require('yargs')
           description: 'Port for the gateway to listen on.',
           default: 3000
         },
+        'dat-port': {
+          alias: 'P',
+          description: 'Port for Dat to listen on. Defaults to Dat\'s internal defaults.',
+          default: null
+        },
         dir: {
           alias: 'd',
           description: 'Directory to use as a cache.',
@@ -62,8 +67,11 @@ require('yargs')
       })
     },
     handler: function (argv) {
-      const { host, port, dir, ...gatewayOpts } = argv
+      const { host, port, dir, 'dat-port': datPort, ...gatewayOpts } = argv
       mkdirp.sync(dir) // make sure it exists
+      if (datPort) {
+        gatewayOpts.dat = { port: datPort }
+      }
       const gateway = new DatGateway({ dir, ...gatewayOpts })
       gateway
         .load()
