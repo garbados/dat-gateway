@@ -181,7 +181,7 @@ class DatGateway extends DatLibrarian {
             datKey = hexTo32.decode(subdomain)
           }
         } else if (pathParts.length >= 1) {
-          datKey = pathParts[0]
+          datKey = pathParts[0] // ???
         }
 
         const isRedirected = Boolean(subdomain && datKey)
@@ -191,7 +191,7 @@ class DatGateway extends DatLibrarian {
         if (pathParts) {
           if (subdomain && isRedirected) {
             path = pathParts.join('/')
-          } else if ((isRedirected || isRedirecting) && pathParts.length >= 2) {
+          } else if (pathParts.length >= 2) {
             path = pathParts.slice(1).join('/')
           }
         }
