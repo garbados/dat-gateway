@@ -191,7 +191,7 @@ class DatGateway extends DatLibrarian {
         if (pathParts) {
           if (subdomain && isRedirected) {
             path = pathParts.join('/')
-          } else if ((isRedirected || isRedirecting) && pathParts.length >= 2) {
+          } else if (pathParts.length >= 2) {
             path = pathParts.slice(1).join('/')
           }
         }
