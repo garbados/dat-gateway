@@ -25,7 +25,7 @@ function log () {
 
 module.exports =
 class DatGateway extends DatLibrarian {
-  constructor ({ dir, dat, loopback, max, net, period, ttl, redirect }) {
+  constructor ({ dir, dat, loopback, max, net, period, ttl, redirect, domain }) {
     dat = dat || {}
     if (typeof dat.sparse === 'undefined') {
       dat.sparse = dat.sparse || true // only download files requested by the user
@@ -35,6 +35,8 @@ class DatGateway extends DatLibrarian {
     }
     log('Creating new gateway with options: %j', { dir, dat, max, net, period, ttl })
     super({ dir, dat, net })
+    this.domain = domain
+    this.domainRegex = new RegExp(`.+.${this.domain}$`)
     this.loopback = loopback || DAT_LOCALHOST_NAME
     this.max = max
     this.period = period
@@ -168,9 +170,10 @@ class DatGateway extends DatLibrarian {
         let subdomain = null
         if (hostIsOnLoopback && hostParts.length >= 3) {
           subdomain = hostParts.slice(0, -2).join('.')
+        } else if (this.domainRegex.test(hostname)) {
+          const i = hostname.indexOf(this.domain)
+          subdomain = hostname.slice(0, i - 1)
         }
-
-        // TODO: handle non-loopback subdomains, for now please put a reverse proxy mapping the domains in front of dat-gateway
 
         // get Dat archive key from subdomain or path
         let datKey = null
