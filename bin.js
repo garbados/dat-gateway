@@ -63,16 +63,21 @@ require('yargs')
           alias: 'L',
           description: 'What hostname to use when serving locally.',
           default: 'dat.localhost'
+        },
+        domain: {
+          alias: 'D',
+          description: 'Domain name of the gateway. Used to support wildcard subdomains.',
+          require: true
         }
       })
     },
     handler: function (argv) {
-      const { host, port, dir, 'dat-port': datPort, ...gatewayOpts } = argv
+      const { domain, host, port, dir, 'dat-port': datPort, ...gatewayOpts } = argv
       mkdirp.sync(dir) // make sure it exists
       if (datPort) {
         gatewayOpts.dat = { port: datPort }
       }
-      const gateway = new DatGateway({ dir, ...gatewayOpts })
+      const gateway = new DatGateway({ domain, dir, ...gatewayOpts })
       gateway
         .load()
         .then(() => {
